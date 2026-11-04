@@ -11,7 +11,7 @@ CACHE_DIR = ROOT / "data" / "cache"
 CHAT_MODEL = os.getenv("CHAT_MODEL", "gemma-4-E4B-it")
 EMBED_MODEL = os.getenv("EMBED_MODEL", "bge-m3")
 
-# Retrieval defaults (tuned in eval/run_eval.py, see README results table).
+# Retrieval defaults, chosen from eval/run_eval.py sweeps (see README). MIN_SCORE stays 0: a 0.65 floor measurably hurt.
 CHUNK_WORDS = int(os.getenv("CHUNK_WORDS", "180"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "40"))
 TOP_K = int(os.getenv("TOP_K", "5"))
