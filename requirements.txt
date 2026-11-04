@@ -1,0 +1,12 @@
+openai>=1.50
+fastapi>=0.110
+uvicorn[standard]>=0.29
+numpy
+rank-bm25
+pydantic>=2
+pypdf
+fonttools
+requests
+python-dotenv
+pytest
+httpx
