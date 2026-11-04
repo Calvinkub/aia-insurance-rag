@@ -10,3 +10,4 @@ requests
 python-dotenv
 pytest
 httpx
+pymupdf4llm  # optional: only for chunking variants E2/E3

@@ -45,8 +45,8 @@ class Retriever:
         if mode not in {"bm25", "dense", "hybrid"}:
             raise ValueError(f"unknown mode {mode!r}")
         self.chunks, self.mode = chunks, mode
-        # Product name is prepended to every chunk so "Health Happy ..." queries can match on it.
-        texts = [f"{c['product']}. {c['text']}" for c in chunks]
+        # Product name (and the optional LLM-written context blurb) is prepended so "Health Happy ..." queries can match on it.
+        texts = [f"{c['product']}. {c['context'] + ' ' if c.get('context') else ''}{c['text']}" for c in chunks]
         self.bm25 = BM25Okapi([tokenize(t) for t in texts]) if mode in {"bm25", "hybrid"} else None
         self.emb = _embed_cached(texts) if mode in {"dense", "hybrid"} else None
 
@@ -77,11 +77,27 @@ class Retriever:
             rank_score, floor_score = rrf, dn
 
         rank_score = np.where(allowed, rank_score, -np.inf)
+        parent_child = any("parent_text" in c for c in self.chunks[:1])
+        limit = k * 4 if parent_child else k  # parent-child: over-fetch children, then merge by parent page
         hits = []
         for idx in np.argsort(-rank_score):
-            if not np.isfinite(rank_score[idx]) or len(hits) >= k:
+            if not np.isfinite(rank_score[idx]) or len(hits) >= limit:
                 break
             if floor_score[idx] < min_score:
                 continue
             hits.append(Hit(self.chunks[idx], float(floor_score[idx]), len(hits) + 1))
-        return hits
+        return self._merge_parents(hits, k) if parent_child else hits
+
+    @staticmethod
+    def _merge_parents(hits: list[Hit], k: int) -> list[Hit]:
+        """Small-to-big: best child per (doc, page) wins; the passage handed to the LLM is the parent page text."""
+        seen, out = set(), []
+        for h in hits:
+            key = (h.chunk["doc"], h.chunk["page"])
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(Hit({**h.chunk, "text": h.chunk["parent_text"]}, h.score, len(out) + 1))
+            if len(out) == k:
+                break
+        return out

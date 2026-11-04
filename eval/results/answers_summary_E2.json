@@ -1,0 +1,26 @@
+{
+ "bm25 RAG, no floor": {
+  "accuracy": 0.8571428571428571,
+  "false_abstain_rate": 0.07142857142857142,
+  "abstain_on_unanswerable": 1.0,
+  "cites_gold_page": 0.75,
+  "citation_verified_rate": 0.9117647058823529
+ },
+ "hybrid RAG, no floor": {
+  "accuracy": 0.9642857142857143,
+  "false_abstain_rate": 0.0,
+  "abstain_on_unanswerable": 1.0,
+  "cites_gold_page": 0.8928571428571429,
+  "citation_verified_rate": 0.9210526315789473
+ },
+ "_meta": {
+  "variant": "E2",
+  "chunk_words": 180,
+  "overlap": 40,
+  "k": 5,
+  "chat_model": "gemma-4-E4B-it",
+  "embed_model": "bge-m3",
+  "n_answerable": 28,
+  "n_unanswerable": 6
+ }
+}

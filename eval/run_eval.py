@@ -1,7 +1,8 @@
 """Reproducible evaluation.
 
   python eval/run_eval.py retrieval              # mode x chunk-size sweep + min_score gate sweep (page-level gold)
-  python eval/run_eval.py answers [--chunk W --overlap O --min-score S]   # end-to-end vs baselines
+  python eval/run_eval.py answers [--chunk W --overlap O --min-score S --variant E0..E3]   # end-to-end vs baselines
+  python eval/run_eval.py variants               # chunking experiments E0..E3 (see aia_rag/chunking.py)
 
 Gold: eval/gold.jsonl (28 answerable + 6 unanswerable). Retrieval hit = a top-k chunk from the gold product on a gold page.
 Answer correct = every gold keyword appears in the answer as a whole token (case-insensitive). Everything runs at temperature 0.
@@ -23,6 +24,7 @@ if os.getenv("ENV_FILE"):
     load_dotenv(os.environ["ENV_FILE"])
 
 from aia_rag import config, llm, rag  # noqa: E402
+from aia_rag.chunking import build_variant  # noqa: E402
 from aia_rag.ingest import build_chunks, read_jsonl  # noqa: E402
 from aia_rag.retrieve import Retriever  # noqa: E402
 
@@ -71,6 +73,20 @@ def cmd_retrieval(_args) -> None:
         print(f"{thr:5.2f} {kept:16.2f} {blocked:21.2f} {(kept + blocked) / 2:9.2f}")
     out["top_scores"] = top
     (RESULTS / "retrieval.json").write_text(json.dumps(out, indent=1))
+
+
+def cmd_variants(args) -> None:
+    """Retrieval metrics for each chunking variant (E0 baseline .. E3 contextual prefix), all three modes."""
+    RESULTS.mkdir(exist_ok=True)
+    out = []
+    print(f"{'variant':>8} {'chunks':>6} {'mode':>7} {'hit@1':>6} {'hit@3':>6} {'hit@5':>6} {'MRR':>6}  missed")
+    for v in args.variants:
+        chunks = build_variant(v, args.chunk, args.overlap)
+        for mode in ["bm25", "dense", "hybrid"]:
+            m = retrieval_metrics(Retriever(chunks, mode))
+            out.append({"variant": v, "n_chunks": len(chunks), "mode": mode, **m})
+            print(f"{v:>8} {len(chunks):>6} {mode:>7} {m['hit@1']:6.2f} {m['hit@3']:6.2f} {m['hit@5']:6.2f} {m['mrr']:6.3f}  {','.join(m['missed'])}")
+    (RESULTS / "retrieval_variants.json").write_text(json.dumps(out, indent=1))
 
 
 args_chunk = lambda a: a.chunk
@@ -122,7 +138,7 @@ def score(g: dict, res: dict) -> dict:
 
 def cmd_answers(args) -> None:
     RESULTS.mkdir(exist_ok=True)
-    chunks = build_chunks(PAGES, args.chunk, args.overlap)
+    chunks = build_variant(args.variant, args.chunk, args.overlap)
     bm, hy = Retriever(chunks, "bm25"), Retriever(chunks, "hybrid")
     configs = {
         "closed_book, may abstain": lambda q: run_closed_book(q),
@@ -131,6 +147,8 @@ def cmd_answers(args) -> None:
         "hybrid RAG, no floor": lambda q: run_rag(q, hy, 0.0),
         f"hybrid RAG, min_score={args.min_score}": lambda q: run_rag(q, hy, args.min_score),
     }
+    if args.variant != "E0":  # baselines were already measured on E0; only compare the retrievers
+        configs = {k: v for k, v in configs.items() if k.startswith(("bm25", "hybrid RAG, no floor"))}
     summary = {}
     for name, fn in configs.items():
         with ThreadPoolExecutor(max_workers=4) as pool:
@@ -147,23 +165,25 @@ def cmd_answers(args) -> None:
             "citation_verified_rate": (sum(s["n_verified"] for s in a) / n_c) if n_c else None,
         }
         slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
-        (RESULTS / f"answers_{slug}.jsonl").write_text(
+        (RESULTS / f"answers_{slug}{'' if args.variant == 'E0' else '_' + args.variant}.jsonl").write_text(
             "\n".join(json.dumps({"id": g["id"], "question": g["question"], "result": r, "score": s}, ensure_ascii=False)
                       for g, r, s in zip(GOLD, results, scored)))
         print(f"{name:40s} " + "  ".join(f"{k}={v:.2f}" if v is not None else f"{k}=n/a" for k, v in summary[name].items()))
-    summary["_meta"] = {"chunk_words": args.chunk, "overlap": args.overlap, "k": config.TOP_K, "chat_model": config.CHAT_MODEL,
+    summary["_meta"] = {"variant": args.variant, "chunk_words": args.chunk, "overlap": args.overlap, "k": config.TOP_K, "chat_model": config.CHAT_MODEL,
                         "embed_model": config.EMBED_MODEL, "n_answerable": len(ANSWERABLE), "n_unanswerable": len(UNANSWERABLE)}
-    (RESULTS / "answers_summary.json").write_text(json.dumps(summary, indent=1))
+    (RESULTS / ("answers_summary.json" if args.variant == "E0" else f"answers_summary_{args.variant}.json")).write_text(json.dumps(summary, indent=1))
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["retrieval", "answers"])
+    ap.add_argument("cmd", choices=["retrieval", "answers", "variants"])
+    ap.add_argument("--variant", default="E0", choices=["E0", "E1", "E2", "E3", "E4"])
+    ap.add_argument("--variants", nargs="+", default=["E0", "E1", "E2", "E3", "E4"])
     ap.add_argument("--chunk", type=int, default=config.CHUNK_WORDS)
     ap.add_argument("--overlap", type=int, default=config.CHUNK_OVERLAP)
     ap.add_argument("--min-score", type=float, default=config.MIN_SCORE)
     args = ap.parse_args()
-    {"retrieval": cmd_retrieval, "answers": cmd_answers}[args.cmd](args)
+    {"retrieval": cmd_retrieval, "answers": cmd_answers, "variants": cmd_variants}[args.cmd](args)
 
 
 if __name__ == "__main__":

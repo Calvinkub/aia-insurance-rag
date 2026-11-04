@@ -74,3 +74,43 @@ def test_toolbox_allowlist_and_validation():
     assert tb.call("calculate", {"expression": "2*21"}) == "42.0"
     assert tb.call("list_products", {}) == "AIA X"
     assert tb.call("search_brochures", {"query": "x"}).startswith("ERROR")  # too short -> validation error
+
+
+# ---- chunking experiments (aia_rag/chunking.py) ----
+from aia_rag.chunking import build_parent_child, chunk_units, strip_boilerplate, to_units  # noqa: E402
+from aia_rag.retrieve import Retriever  # noqa: E402
+
+
+def test_to_units_separates_tables_and_sentences():
+    text = "First sentence here. Second one follows.\n\n|H1|H2|\n|---|---|\n|a|b|\n\nAfter table."
+    kinds = [k for k, _ in to_units(text)]
+    assert kinds == ["sent", "sent", "table", "sent"]
+
+
+def test_strip_boilerplate_removes_only_repeated_long_sentences():
+    boiler = "The insured is obliged to declare facts in applying for insurance."
+    pages = [{"doc": "d", "product": "P", "page": i, "text": f"{boiler} Unique fact number {i} appears here today."} for i in (1, 2, 3)]
+    out = strip_boilerplate(pages)
+    assert all(boiler not in " ".join(s for _, s in p["units"]) for p in out)
+    assert all(f"Unique fact number {p['page']}" in " ".join(s for _, s in p["units"]) for p in out)
+
+
+def test_table_chunks_repeat_header_row():
+    rows = "\n".join(f"|row{i}|" + " ".join(["w"] * 30) + "|" for i in range(8))
+    page = {"doc": "d", "product": "P", "page": 1, "units": [("table", "|Head A|Head B|\n|---|---|\n" + rows)]}
+    chunks = chunk_units(page, words=60, overlap=0)
+    assert len(chunks) > 1 and all(c["text"].startswith("|Head A|Head B|") for c in chunks)
+
+
+def test_sentence_chunks_do_not_cut_mid_sentence():
+    sents = [f"Sentence {i} has exactly seven words in it." for i in range(30)]
+    page = {"doc": "d", "product": "P", "page": 1, "units": [("sent", s) for s in sents]}
+    assert all(c["text"].endswith("it.") for c in chunk_units(page, words=40, overlap=8))
+
+
+def test_parent_child_returns_parent_page_deduplicated():
+    page = {"doc": "d", "product": "P", "page": 1, "text": " ".join(f"Fact {i} is stated plainly here." for i in range(30))}
+    kids = build_parent_child([page], child_words=20, child_overlap=0)
+    assert len(kids) > 3 and all(k["parent_text"] == kids[0]["parent_text"] for k in kids)
+    merged = Retriever._merge_parents([Hit(k, 1.0, i) for i, k in enumerate(kids[:4])], k=5)
+    assert len(merged) == 1 and merged[0].chunk["text"] == kids[0]["parent_text"]
