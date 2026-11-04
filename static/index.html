@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIA Brochure Q&amp;A</title>
+<style>
+ body{font:16px/1.5 system-ui,sans-serif;max-width:760px;margin:2rem auto;padding:0 1rem;color:#222}
+ h1{font-size:1.3rem} form{display:flex;gap:.5rem} input{flex:1;padding:.6rem;font-size:1rem}
+ button{padding:.6rem 1rem;font-size:1rem;cursor:pointer} select{padding:.6rem}
+ #out{white-space:pre-wrap;margin-top:1.2rem} .cite{background:#f3f3f3;border-left:3px solid #c8102e;padding:.4rem .7rem;margin:.4rem 0;font-size:.9rem}
+ .bad{border-color:#e0a800} .tool{color:#555;font-size:.85rem;margin:.3rem 0} .abstain{color:#8a4b00;font-weight:600}
+</style></head><body>
+<h1>AIA Thailand brochure Q&amp;A</h1>
+<form id="f"><input id="q" placeholder="e.g. What is the waiting period of AIA CI Care?" required minlength="3" maxlength="500">
+<select id="mode"><option value="ask">RAG</option><option value="agent">Agent</option></select><button>Ask</button></form>
+<div id="out"></div>
+<script>
+const out=document.getElementById('out');
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+document.getElementById('f').onsubmit=e=>{
+  e.preventDefault(); out.innerHTML='';
+  const q=encodeURIComponent(document.getElementById('q').value);
+  const es=new EventSource((document.getElementById('mode').value==='ask'?'/ask/stream?q=':'/agent/stream?q=')+q);
+  const live=document.createElement('div'); live.style.color='#888'; out.appendChild(live);
+  es.addEventListener('sources',ev=>{live.textContent='Retrieved: '+JSON.parse(ev.data).map(s=>s.product+' p'+s.page).join(', ')+' ...'});
+  es.addEventListener('tool',ev=>{const d=JSON.parse(ev.data);const t=document.createElement('div');t.className='tool';
+    t.innerHTML='step '+d.step+': <b>'+esc(d.name)+'</b>('+esc(JSON.stringify(d.args))+') &rarr; '+esc(d.result.slice(0,160));out.insertBefore(t,live)});
+  es.addEventListener('final',ev=>{es.close();const d=JSON.parse(ev.data);live.remove();
+    const a=document.createElement('div');a.className=d.answerable===false?'abstain':'';a.textContent=d.answer;out.appendChild(a);
+    (d.citations||[]).forEach(c=>{const x=document.createElement('div');x.className='cite'+(c.verified?'':' bad');
+      x.textContent=c.product+' p'+c.page+(c.verified?'':' (quote not verified)')+': "'+c.quote+'"';out.appendChild(x)})});
+  es.onerror=()=>es.close();
+};
+</script></body></html>
