@@ -31,7 +31,7 @@ The first request embeds all chunks through the proxy (~4 min, then cached in `d
 | `GET /` | minimal UI (RAG or Agent mode) |
 
 ```bash
-python -m pytest -q tests          # 20 offline tests, no proxy needed
+python -m pytest -q tests          # 25 offline tests, no proxy needed
 python eval/check_gold.py          # every gold evidence quote must occur on its cited page
 ENV_FILE=.env python eval/run_eval.py retrieval    # mode x chunk-size sweep + min_score sweep
 ENV_FILE=.env python eval/run_eval.py answers      # end-to-end vs baselines
