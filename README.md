@@ -112,15 +112,39 @@ What the numbers say, and do not say:
 
 | id | question | what happened | cause |
 |---|---|---|---|
-| A07 | How many severe-stage critical illnesses does AIA CI Care cover? | Answered "44" (gold: 40). | The gold page is a flattened disease table; `pdf → text` loses the layout, so retrieval never surfaced it. The model then **invented a number from other passages instead of abstaining**. |
+| A07 | How many severe-stage critical illnesses does AIA CI Care cover? | Answered "44"; my gold label says 40. | **The brochure contradicts itself:** page 1 says "Cover 44 severe stage critical illnesses", the page-2 table header says "Severe Stage (40 Diseases / Treatment)". Gold takes the table (40); the model answered from page 1 (44), so this is a source conflict, not a hallucination. The ideal behaviour is to flag the conflict; the system does not. (An earlier version of this README wrongly called it a hallucination caused by table flattening.) |
 | A24 | Which premium payment periods can be chosen for Infinite Wealth Prestige? | Answered with top-up payment *frequency* (monthly, quarterly…). | The gold chunk (p3) ranked 5th; the model answered from a higher-ranked passage using a different sense of "payment period". |
 | A17 (only with floor) | Max income tax deduction for Smart Select? | False abstain. | The `min_score=0.65` floor dropped the evidence chunk. |
+
+## Chunking experiments (`aia_rag/chunking.py`, `python eval/run_eval.py variants`)
+
+The shipped baseline (E0) is fixed 180-word windows (74% of chunks end mid-sentence; ~15% of text is disclaimers repeated on every page).
+Techniques were picked from a NotebookLM literature pass (web sources, figures not independently verified) and each was
+measured on the same gold set. Late chunking and semantic chunking were skipped: the first needs a different embedding model
+than the proxy offers, the second reportedly fragments short text.
+
+| | pipeline | chunks | hybrid hit@1 | hybrid hit@5 | hybrid MRR | dense MRR | answer accuracy (hybrid) | citations verified |
+|---|---|---|---|---|---|---|---|---|
+| E0 | **baseline**: 180-word windows | 290 | 0.82 | 0.96 | 0.882 | 0.852 | 0.93 | 1.00 |
+| E1 | + drop repeated boilerplate, sentence-aware packing | 249 | 0.82 | 0.96 | 0.893 | 0.878 | 0.89 | 0.97 |
+| E2 | PyMuPDF4LLM markdown tables (header row repeated per chunk) | 262 | 0.79 | 0.96 | 0.875 | 0.788 | 0.96 | 0.92 |
+| E3 | E2 + LLM-written context sentence per chunk (contextual retrieval) | 262 | 0.79 | 1.00 | 0.873 | 0.848 | 0.96 | 0.88 |
+| E4 | parent-child: ~60-word children, whole page returned | 650 | 0.86 | 0.96 | 0.889 | **0.923** | 0.93 | 0.95 |
+
+Reading it honestly: **no variant clearly beats the baseline.** Accuracy moves by ±1 question (25–27 of 28) and MRR by about
+0.01–0.04, all inside noise for n = 28. Specific observations: E1 cuts mid-sentence endings from 74% to 13% of chunks but
+did not raise answer accuracy; E2/E3 fixed A24 (+1 question) but lowered the share of citations whose quote can be found in
+the passage (1.00 → 0.88–0.92; likely the model stitching table cells together, not investigated); E3 is the only variant
+with hit@5 = 1.00 but costs ~260 extra LLM calls; E4's **dense-only** retrieval was best (hit@3 = hit@5 = 1.00, MRR 0.923) while
+its hybrid fusion was not, which is a hypothesis for a fresh question set, not a result: dense-only answers were not evaluated,
+to avoid tuning further on the same 34 questions. Baseline E0 stays the default (`aia_rag/ingest.py`); variants are opt-in.
 
 ## Limitations
 
 - **Small, self-built eval, tuned on itself.** Chunk size, retrieval mode and `min_score` were all chosen by looking at the same 34 questions; there is no held-out set, so the shipped numbers are optimistic. Differences of one question are noise.
 - **Keyword scoring is a proxy.** It can credit an answer that mentions the right number in the wrong context and can miss correct paraphrases (one gold keyword was a word stem and wrongly failed a correct answer; fixed to a full word). I did not use an LLM judge; a second human read of the answers is still the real check.
-- **PDF tables flatten.** Benefit tables (plan amounts, ICU rules) extract as number soup; questions that depend on table structure are the weakest spot (A07).
+- **PDF tables flatten.** Benefit tables (plan amounts, ICU rules) extract as number soup with `pypdf`. A table parser (E2) keeps the structure but did not measurably improve answers on this gold set, so the effect of table flattening is untested rather than disproved.
+- **Conflicting sources are not flagged.** A07 shows the brochures can disagree with themselves (44 vs 40); the system silently picks one instead of surfacing the conflict.
 - **English brochures only.** 3 "EN" files are actually Thai and extract as garbage; they are filtered out (`is_english`), so *AIA Term*, most of *Endowment* and *10/15 Pay Life* are thin or missing. A Thai-capable pipeline is the obvious next step.
 - **The agent is not quantitatively evaluated.** It is exercised manually (multi-step comparison, tool-argument rejection tests) but has no gold set; in one manual run it multiplied by hand instead of calling `calculate`.
 - **Same model family does everything** (answerer; no independent judge). Embeddings and generation depend on the class proxy.
@@ -128,6 +152,6 @@ What the numbers say, and do not say:
 
 ## Next steps
 
-Table-aware extraction (e.g. layout-preserving text or a table parser) for A07-type questions; a cross-check step that
-refuses a numeric answer whose number does not occur in any cited quote (would have caught A07); a larger held-out gold
-set written by someone who did not tune the system; Thai support.
+Detect and report conflicting figures across retrieved passages (A07); test dense-only parent-child retrieval (E4) on a
+fresh question set; investigate why table-based variants lower citation verification; a larger held-out gold set written by
+someone who did not tune the system; Thai support.
