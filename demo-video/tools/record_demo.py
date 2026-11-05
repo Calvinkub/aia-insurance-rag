@@ -1,0 +1,102 @@
+"""Drive the real AIA Q&A web UI in a browser and record it (Playwright, Chromium).
+
+The page is the real FastAPI app at BASE (start it first: uvicorn aia_rag.server:app --port 8000).
+A visible cursor and click ripple are injected so the viewer can follow the mouse.
+Writes public/demo_raw.webm and public/demo_timeline.json (start/end seconds of each step in the video).
+Usage: python tools/record_demo.py
+"""
+import json
+import time
+from pathlib import Path
+
+from playwright.sync_api import Page, sync_playwright
+
+ROOT = Path(__file__).resolve().parent.parent
+BASE = "http://127.0.0.1:8000/"
+W, H = 1280, 720
+
+STEPS = [
+    ("demo1", "ask", "What is the waiting period of AIA CI Care?"),
+    ("demo2", "ask", "What are the Vitality reward tiers?"),
+    ("demo3", "agent", "Compare the issue age range of AIA CI Care and AIA Smart Select"),
+    ("demo4", "ask", "How many severe stage critical illnesses does AIA CI Care cover?"),
+]
+
+CSS = """
+html{background:#fff} body{font-size:24px;max-width:1040px;margin:2.2rem auto}
+h1{font-size:2rem} input,button,select{font-size:24px!important} .cite{font-size:20px!important}
+.tool{font-size:19px!important} #out{margin-top:1.6rem}
+"""
+CURSOR_JS = """
+(() => {
+  const c = document.createElement('div');
+  c.style.cssText = 'position:fixed;z-index:99999;width:26px;height:26px;margin:-4px 0 0 -4px;pointer-events:none;' +
+    'background:url("data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27><path d=%27M3 2l7 18 2.6-7.4L20 10z%27 fill=%27black%27 stroke=%27white%27 stroke-width=%271.6%27/></svg>") no-repeat;background-size:contain;left:-50px;top:-50px';
+  const add = () => document.body && document.body.appendChild(c);
+  document.addEventListener('DOMContentLoaded', add);
+  document.addEventListener('mousemove', e => { c.style.left = e.clientX + 'px'; c.style.top = e.clientY + 'px'; }, true);
+  document.addEventListener('mousedown', e => {
+    const r = document.createElement('div');
+    r.style.cssText = `position:fixed;z-index:99998;left:${e.clientX - 20}px;top:${e.clientY - 20}px;width:40px;height:40px;border-radius:50%;` +
+      'border:3px solid #c8102e;pointer-events:none;transition:transform .5s,opacity .5s;opacity:.9';
+    document.body.appendChild(r);
+    requestAnimationFrame(() => { r.style.transform = 'scale(2.2)'; r.style.opacity = '0'; });
+    setTimeout(() => r.remove(), 600);
+  }, true);
+})();
+"""
+
+
+def move_click(page: Page, selector: str) -> None:
+    box = page.locator(selector).bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2, steps=35)
+    page.wait_for_timeout(250)
+    page.mouse.down(); page.wait_for_timeout(90); page.mouse.up()
+
+
+def wait_done(page: Page, timeout_ms: int = 120_000) -> str:
+    # The UI removes the grey "Retrieved:" line when the final event arrives.
+    page.wait_for_function(
+        "() => { const o=document.getElementById('out'); return o.children.length>0 && "
+        "![...o.children].some(c=>c.style && c.style.color==='rgb(136, 136, 136)') }", timeout=timeout_ms)
+    page.wait_for_timeout(1500)
+    return page.inner_text("#out")
+
+
+def main() -> None:
+    timeline = {}
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        ctx = browser.new_context(viewport={"width": W, "height": H}, record_video_dir=str(ROOT / "public" / "_rec"),
+                                  record_video_size={"width": W, "height": H})
+        ctx.add_init_script(CURSOR_JS)
+        page = ctx.new_page()
+        t0 = time.time()
+        page.goto(BASE)
+        page.add_style_tag(content=CSS)
+        page.wait_for_timeout(1200)
+        for name, mode, question in STEPS:
+            timeline[name] = {"start": round(time.time() - t0, 2)}
+            if mode != page.input_value("#mode"):
+                move_click(page, "#mode")
+                page.select_option("#mode", mode)
+                page.wait_for_timeout(500)
+            move_click(page, "#q")
+            page.fill("#q", "")
+            page.type("#q", question, delay=55)
+            page.wait_for_timeout(500)
+            move_click(page, "button")
+            text = wait_done(page)
+            timeline[name]["end"] = round(time.time() - t0, 2)
+            print(f"== {name} [{mode}] {question}\n{text}\n", flush=True)
+            page.wait_for_timeout(1800)
+        path = page.video.path()
+        ctx.close(); browser.close()
+    dest = ROOT / "public" / "demo_raw.webm"
+    Path(path).replace(dest)
+    (ROOT / "public" / "demo_timeline.json").write_text(json.dumps(timeline, indent=2))
+    print("saved", dest, timeline)
+
+
+if __name__ == "__main__":
+    main()

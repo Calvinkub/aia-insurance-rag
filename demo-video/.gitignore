@@ -8,3 +8,5 @@ out
 
 # generated voice-over (python tools/gen_tts.py)
 public/audio/
+public/demo_raw.webm
+public/_rec/

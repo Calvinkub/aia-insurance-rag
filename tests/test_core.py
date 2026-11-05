@@ -114,3 +114,19 @@ def test_parent_child_returns_parent_page_deduplicated():
     assert len(kids) > 3 and all(k["parent_text"] == kids[0]["parent_text"] for k in kids)
     merged = Retriever._merge_parents([Hit(k, 1.0, i) for i, k in enumerate(kids[:4])], k=5)
     assert len(merged) == 1 and merged[0].chunk["text"] == kids[0]["parent_text"]
+
+
+def test_stream_abstain_never_returns_an_empty_answer(monkeypatch):
+    """Regression: the streaming path returned answer='' on a model decline, so the UI showed nothing."""
+    from types import SimpleNamespace
+
+    from aia_rag import rag
+
+    class R:
+        def search(self, *a, **k):
+            return [Hit({"product": "AIA X", "page": 1, "text": "unrelated"}, 0.4, 1)]
+
+    piece = SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content='{"answerable": false, "answer": ""}'))])
+    monkeypatch.setattr(rag.llm, "chat", lambda *a, **k: iter([piece]))
+    final = [e for e in rag.stream_answer("what is the vitality tier?", R()) if e["event"] == "final"][0]["data"]
+    assert final["answerable"] is False and final["answer"] == rag.DECLINED
