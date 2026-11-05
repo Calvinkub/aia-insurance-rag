@@ -4,6 +4,7 @@ Reads GEMINI_API_KEY from demo-video/.env (git-ignored) and never prints it.
 Usage: python tools/gen_tts.py [segment ...]     (no args = all segments)
 Writes public/audio/<segment>.wav and src/audio.json (segment -> duration in seconds).
 """
+import audioop
 import base64
 import json
 import sys
@@ -70,6 +71,21 @@ def synth(text: str, key: str) -> bytes:
     return base64.b64decode(part["data"])  # raw 16-bit PCM, 24 kHz, mono
 
 
+def trim_tail_burst(pcm: bytes, rate: int = 24000) -> bytes:
+    """Gemini TTS ends every clip with a ~0.15 s loud burst (heard as static) after the speech has finished.
+
+    The burst is always preceded by a stretch of near-silence. Cut back to the start of the last 50 ms window that is
+    quiet if one exists in the final 0.6 s, so the clip ends in silence; otherwise leave the audio alone.
+    """
+    step = rate // 20 * 2  # 50 ms of 16-bit samples
+    wins = [audioop.rms(pcm[i:i + step], 2) for i in range(0, len(pcm) - step + 1, step)]
+    for back in range(1, min(12, len(wins)) + 1):
+        if wins[-back] < 150:
+            end = (len(wins) - back + 1) * step  # keep the quiet window, drop everything after it
+            return pcm[:end]
+    return pcm
+
+
 def write_wav(path: Path, pcm: bytes) -> float:
     with wave.open(str(path), "wb") as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000); w.writeframes(pcm)
@@ -92,7 +108,7 @@ def main() -> None:
     meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
     for n in names:
         path = out / f"{n}.wav"
-        meta[n] = round(write_wav(path, synth(SEGMENTS[n], key)), 2)
+        meta[n] = round(write_wav(path, trim_tail_burst(synth(SEGMENTS[n], key))), 2)
         meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2))
         print(f"[{n}] {meta[n]} s\n  want: {SEGMENTS[n]}\n  heard: {transcribe(path, key)}", flush=True)
 

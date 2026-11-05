@@ -1,6 +1,6 @@
 import React from "react";
 import { Audio } from "@remotion/media";
-import { Sequence, staticFile } from "remotion";
+import { Sequence, interpolate, staticFile } from "remotion";
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { Chunking, Failure, Outro, Pipeline, Problem, Results, Title } from "./scenes";
@@ -12,6 +12,7 @@ const LEAD = 12; // frames of silence before the voice starts
 const TAIL = 1.2; // seconds after the voice ends
 
 const durations = audio as Record<string, number>;
+const FADE = 6; // frames of volume ramp at each end of a clip, so transitions stay silent
 
 // `frames` is the minimum length the animation needs; a scene grows to fit its voice-over clip.
 const BASE = [
@@ -37,7 +38,15 @@ export const Motion: React.FC = () => (
         {s.el}
         {s.hasClip ? (
           <Sequence from={LEAD} name={`Voice ${s.clip}`}>
-            <Audio src={staticFile(`audio/${s.clip}.wav`)} />
+            <Audio
+              src={staticFile(`audio/${s.clip}.wav`)}
+              volume={(f) =>
+                interpolate(f, [0, FADE, Math.round(durations[s.clip] * FPS) - FADE, Math.round(durations[s.clip] * FPS)], [0, 1, 1, 0], {
+                  extrapolateLeft: "clamp",
+                  extrapolateRight: "clamp",
+                })
+              }
+            />
           </Sequence>
         ) : null}
       </TransitionSeries.Sequence>,
