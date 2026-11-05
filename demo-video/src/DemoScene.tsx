@@ -4,7 +4,7 @@ import { AbsoluteFill, Easing, interpolate, staticFile, useCurrentFrame, useVide
 import timeline from "./demo_timeline.json";
 import { C, fontFamily } from "./theme";
 
-const CAPTIONS: { key: keyof typeof timeline; text: string; color: string }[] = [
+const CAPTIONS: { key: "demo1" | "demo2" | "demo3" | "demo4"; text: string; color: string }[] = [
   { key: "demo1", text: "1 · คำถามที่มีคำตอบ → citation ขึ้นสถานะตรวจแล้ว", color: C.teal },
   { key: "demo2", text: "2 · คำถามที่ไม่มีในเอกสาร → ปฏิเสธ ไม่เดา", color: C.amber },
   { key: "demo3", text: "3 · Agent เรียก tool ทีละขั้น", color: C.blue },

@@ -6,6 +6,7 @@ import { fade } from "@remotion/transitions/fade";
 import { Chunking, Failure, Outro, Pipeline, Problem, Results, Title } from "./scenes";
 import audio from "./audio.json";
 import { DemoScene } from "./DemoScene";
+import demoTimeline from "./demo_timeline.json";
 
 export const T = 15;
 const FPS = 30;
@@ -20,7 +21,7 @@ const BASE = [
   { name: "Title", clip: "title", frames: 150, el: <Title /> },
   { name: "Problem", clip: "problem", frames: 210, el: <Problem /> },
   { name: "Pipeline", clip: "pipeline", frames: 300, el: <Pipeline /> },
-  { name: "Demo", clip: "demo-scene", frames: Math.ceil(45.03 * FPS), el: <DemoScene /> },
+  { name: "Demo", clip: "demo-scene", frames: Math.ceil(demoTimeline.duration * FPS), el: <DemoScene /> },
   { name: "Results", clip: "results", frames: 300, el: <Results /> },
   { name: "Chunking", clip: "chunking", frames: 240, el: <Chunking /> },
   { name: "Failure", clip: "failure", frames: 300, el: <Failure /> },
