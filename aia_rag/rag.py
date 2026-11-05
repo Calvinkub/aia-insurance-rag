@@ -9,7 +9,18 @@ from . import config, llm
 from .retrieve import Hit, Retriever
 from .schemas import ModelAnswer, RagResponse, ResolvedCitation
 
-DECLINED = "The brochures do not state this."
+_THAI = re.compile(r"[\u0e00-\u0e7f]")
+_MESSAGES = {
+    "declined": ("The brochures do not state this.", "โบรชัวร์ไม่ได้ระบุเรื่องนี้"),
+    "no_retrieval": ("I could not find anything relevant in the AIA brochures.", "ไม่พบข้อมูลที่เกี่ยวข้องในโบรชัวร์ AIA"),
+    "invalid": ("The model returned an invalid answer; please rephrase.", "โมเดลตอบในรูปแบบที่ไม่ถูกต้อง กรุณาถามใหม่อีกครั้ง"),
+}
+DECLINED = _MESSAGES["declined"][0]
+
+
+def say(kind: str, question: str) -> str:
+    """Fixed system messages follow the language of the question (Thai if it contains Thai characters)."""
+    return _MESSAGES[kind][1 if _THAI.search(question) else 0]
 
 SYSTEM = (
     "You answer questions about AIA Thailand insurance products using ONLY the numbered sources provided. "
@@ -85,16 +96,16 @@ def answer_question(question: str, retriever: Retriever, k: int = config.TOP_K,
     hits = retriever.search(question, k=k, min_score=min_score)
     if not hits:
         return RagResponse(question=question, answerable=False, abstain_reason="no_retrieval",
-                           answer="I could not find anything relevant in the AIA brochures.")
+                           answer=say("no_retrieval", question))
     top = hits[0].score
     try:
         ans = generate(question, hits)
     except ValueError:
         return RagResponse(question=question, answerable=False, abstain_reason="invalid_output", top_score=top,
-                           answer="The model returned an invalid answer; please rephrase.")
+                           answer=say("invalid", question))
     if not ans.answerable:
         return RagResponse(question=question, answerable=False, abstain_reason="model_declined", top_score=top,
-                           answer=ans.answer or DECLINED)
+                           answer=ans.answer or say("declined", question))
     return RagResponse(question=question, answerable=True, answer=ans.answer, top_score=top,
                        citations=resolve_citations(ans, hits))
 
@@ -108,7 +119,7 @@ def stream_answer(question: str, retriever: Retriever, k: int = config.TOP_K,
     if not hits:
         yield {"event": "final", "data": RagResponse(
             question=question, answerable=False, abstain_reason="no_retrieval",
-            answer="I could not find anything relevant in the AIA brochures.").model_dump()}
+            answer=say("no_retrieval", question)).model_dump()}
         return
     raw = ""
     for chunk in llm.chat(build_messages(question, hits), temperature=0, max_tokens=700, stream=True):
@@ -119,10 +130,10 @@ def stream_answer(question: str, retriever: Retriever, k: int = config.TOP_K,
     try:
         ans = parse_model_json(raw)
         final = RagResponse(question=question, answerable=ans.answerable,
-                            answer=ans.answer or (DECLINED if not ans.answerable else ""),
+                            answer=ans.answer or (say("declined", question) if not ans.answerable else ""),
                             citations=resolve_citations(ans, hits) if ans.answerable else [],
                             abstain_reason=None if ans.answerable else "model_declined", top_score=hits[0].score)
     except (ValueError, ValidationError):
         final = RagResponse(question=question, answerable=False, abstain_reason="invalid_output",
-                            answer="The model returned an invalid answer; please rephrase.")
+                            answer=say("invalid", question))
     yield {"event": "final", "data": final.model_dump()}

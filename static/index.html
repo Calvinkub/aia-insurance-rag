@@ -1,35 +1,107 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AIA Brochure Q&amp;A</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
- body{font:16px/1.5 system-ui,sans-serif;max-width:760px;margin:2rem auto;padding:0 1rem;color:#222}
- h1{font-size:1.3rem} form{display:flex;gap:.5rem} input{flex:1;padding:.6rem;font-size:1rem}
- button{padding:.6rem 1rem;font-size:1rem;cursor:pointer} select{padding:.6rem}
- #out{white-space:pre-wrap;margin-top:1.2rem} .cite{background:#f3f3f3;border-left:3px solid #c8102e;padding:.4rem .7rem;margin:.4rem 0;font-size:.9rem}
- .bad{border-color:#e0a800} .tool{color:#555;font-size:.85rem;margin:.3rem 0} .abstain{color:#8a4b00;font-weight:600}
+/* Tokens: red palette and spacing/radius scale follow the DESIGN.md pattern (awesome-design-md), recoloured for an AIA-red theme.
+   The red is an approximation of the brand red, not an official asset; this app is a course project and is not affiliated with AIA. */
+:root{
+ --primary:#d31145; --primary-active:#a80e37; --primary-soft:#fdecef; --primary-ring:rgba(211,17,69,.16);
+ --ink:#1d1b1c; --body:#3f3b3d; --muted:#6f6a6c; --hairline:#e9e3e4; --canvas:#faf7f7; --card:#fff;
+ --ok:#1f7a4d; --ok-soft:#e8f5ee; --warn:#8a5a00; --warn-soft:#fff6e0; --bad:#b3261e;
+ --r-md:8px; --r-lg:12px; --r-xl:16px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--body);font:16px/1.6 Inter,"Noto Sans Thai",system-ui,sans-serif}
+.bar{background:var(--primary);color:#fff}
+.bar-in{max-width:880px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:12px}
+.mark{width:34px;height:34px;border-radius:var(--r-md);background:#fff;color:var(--primary);display:grid;place-items:center;font-weight:700;font-size:18px}
+.bar b{font-weight:600;font-size:17px;letter-spacing:.1px}.bar span{opacity:.85;font-size:14px;margin-left:auto}
+main{max-width:880px;margin:0 auto;padding:40px 24px 24px}
+h1{font-size:32px;line-height:1.25;color:var(--ink);margin:0 0 8px;letter-spacing:-.4px;font-weight:700}
+.lead{color:var(--muted);margin:0 0 28px}
+.panel{background:var(--card);border:1px solid var(--hairline);border-radius:var(--r-xl);padding:20px;box-shadow:0 1px 2px rgba(29,27,28,.04)}
+form{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch}
+#q{flex:1 1 360px;height:48px;padding:0 16px;font:inherit;font-size:17px;color:var(--ink);background:#fff;border:1px solid var(--hairline);border-radius:var(--r-md);outline:none}
+#q:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-ring)}
+.seg{display:flex;background:var(--canvas);border:1px solid var(--hairline);border-radius:var(--r-md);padding:3px;gap:3px}
+.seg button{border:0;background:transparent;padding:0 16px;height:40px;border-radius:6px;font:inherit;font-weight:500;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed=true]{background:#fff;color:var(--primary);box-shadow:0 1px 2px rgba(29,27,28,.12)}
+#go{height:48px;padding:0 26px;border:0;border-radius:var(--r-md);background:var(--primary);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+#go:hover,#go:active{background:var(--primary-active)}#go:disabled{background:#e9e3e4;color:var(--muted);cursor:default}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{border:1px solid var(--hairline);background:#fff;color:var(--body);padding:6px 14px;border-radius:999px;font:inherit;font-size:14px;cursor:pointer}
+.chip:hover{border-color:var(--primary);color:var(--primary)}
+#out{margin-top:24px;display:flex;flex-direction:column;gap:12px}
+.live{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:15px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--primary);animation:pulse 1s infinite ease-in-out}
+@keyframes pulse{50%{opacity:.25}}
+.card{background:var(--card);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:18px 20px}
+.answer{font-size:18px;color:var(--ink);white-space:pre-wrap;border-left:4px solid var(--primary)}
+.notice{background:var(--warn-soft);border:1px solid #f0d9a0;color:var(--warn);border-radius:var(--r-lg);padding:16px 20px;font-size:18px;font-weight:600}
+.label{font-size:12px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin:8px 0 -4px}
+.cite-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.pill{background:var(--primary-soft);color:var(--primary);font-weight:600;font-size:13px;padding:2px 10px;border-radius:999px}
+.pg{font-size:13px;color:var(--muted);font-weight:500}
+.ver{margin-left:auto;font-size:13px;font-weight:600;padding:2px 10px;border-radius:999px}
+.ver.ok{background:var(--ok-soft);color:var(--ok)}.ver.bad{background:var(--warn-soft);color:var(--warn)}
+.quote{font-size:15px;color:var(--body);margin:0;font-style:italic}
+.tool{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:var(--body)}
+.tool i{flex:none;width:26px;height:26px;border-radius:50%;background:var(--primary-soft);color:var(--primary);font-style:normal;font-weight:700;display:grid;place-items:center;font-size:13px}
+.tool code{font:500 13px ui-monospace,Menlo,monospace;color:var(--primary-active)}
+.tool small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+footer{max-width:880px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);font-size:13px}
 </style></head><body>
-<h1>AIA Thailand brochure Q&amp;A</h1>
-<form id="f"><input id="q" placeholder="e.g. What is the waiting period of AIA CI Care?" required minlength="3" maxlength="500">
-<select id="mode"><option value="ask">RAG</option><option value="agent">Agent</option></select><button>Ask</button></form>
-<div id="out"></div>
+<div class="bar"><div class="bar-in"><div class="mark">?</div><b>AIA Brochure Q&amp;A</b><span>RAG + Agent · อ้างอิงหน้าโบรชัวร์</span></div></div>
+<main>
+ <h1>ถามเรื่องประกัน AIA จากโบรชัวร์จริง</h1>
+ <p class="lead">ตอบพร้อมหน้าอ้างอิงที่ตรวจแล้ว หรือบอกตรงๆ ว่า “โบรชัวร์ไม่ได้ระบุ” แทนการเดา · ถามได้ทั้งภาษาไทยและอังกฤษ</p>
+ <div class="panel">
+  <form id="f">
+   <input id="q" placeholder="เช่น ระยะเวลารอคอยของ AIA CI Care คือกี่วัน" required minlength="3" maxlength="500" autocomplete="off">
+   <div class="seg" role="group" aria-label="โหมด"><button type="button" data-mode="ask" aria-pressed="true">RAG</button><button type="button" data-mode="agent" aria-pressed="false">Agent</button></div>
+   <select id="mode" hidden><option value="ask">RAG</option><option value="agent">Agent</option></select>
+   <button id="go">ถาม</button>
+  </form>
+  <div class="chips" id="chips"></div>
+ </div>
+ <div id="out" data-state="idle"></div>
+</main>
+<footer>โปรเจกต์รายวิชา ไม่ใช่คำแนะนำด้านประกัน · โบรชัวร์อายุปี 2019–2022 อาจล้าสมัย · ไม่เกี่ยวข้องกับ AIA</footer>
 <script>
-const out=document.getElementById('out');
+const out=document.getElementById('out'), q=document.getElementById('q'), go=document.getElementById('go'), modeSel=document.getElementById('mode');
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 // Minimal markdown for model answers: **bold** and "* "/"- " bullets. Input is escaped first, so this is XSS-safe.
-const md=s=>esc(s).replace(/^[*-] /gm,'\u2022 ').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
-const unquote=s=>String(s).replace(/^["\u201c\u201d]+|["\u201c\u201d]+$/g,'');
-document.getElementById('f').onsubmit=e=>{
-  e.preventDefault(); out.innerHTML='';
-  const q=encodeURIComponent(document.getElementById('q').value);
-  const es=new EventSource((document.getElementById('mode').value==='ask'?'/ask/stream?q=':'/agent/stream?q=')+q);
-  const live=document.createElement('div'); live.style.color='#888'; out.appendChild(live);
-  es.addEventListener('sources',ev=>{live.textContent='Retrieved: '+JSON.parse(ev.data).map(s=>s.product+' p'+s.page).join(', ')+' ...'});
-  es.addEventListener('tool',ev=>{const d=JSON.parse(ev.data);const t=document.createElement('div');t.className='tool';
-    t.innerHTML='step '+d.step+': <b>'+esc(d.name)+'</b>('+esc(JSON.stringify(d.args))+') &rarr; '+esc(d.result.slice(0,160));out.insertBefore(t,live)});
-  es.addEventListener('final',ev=>{es.close();const d=JSON.parse(ev.data);live.remove();
-    const a=document.createElement('div');a.className=d.answerable===false?'abstain':'';a.innerHTML=md(d.answer);out.appendChild(a);
-    (d.citations||[]).forEach(c=>{const x=document.createElement('div');x.className='cite'+(c.verified?'':' bad');
-      x.textContent=c.product+' p'+c.page+(c.verified?'':' (quote not verified)')+': "'+unquote(c.quote)+'"';out.appendChild(x)})});
-  es.onerror=()=>es.close();
-};
+const md=s=>esc(s).replace(/^[*-] /gm,'• ').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+const unquote=s=>String(s).replace(/^["“”]+|["“”]+$/g,'');
+const el=(cls,html,tag='div')=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
+
+const SUGGEST=[['ระยะเวลารอคอยของ AIA CI Care คือกี่วัน','ask'],['รางวัล Vitality มีกี่ระดับ','ask'],
+  ['เปรียบเทียบอายุรับประกันของ AIA CI Care กับ AIA Smart Select','agent'],['What is the waiting period of AIA CI Care?','ask']];
+const chips=document.getElementById('chips');
+SUGGEST.forEach(([t,m])=>{const c=el('chip',esc(t),'button');c.type='button';c.onclick=()=>{setMode(m);q.value=t;ask()};chips.appendChild(c)});
+
+function setMode(m){modeSel.value=m;document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m))}
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+
+function ask(){
+  const text=q.value.trim(); if(text.length<3)return;
+  out.innerHTML=''; out.dataset.state='loading'; go.disabled=true;
+  const es=new EventSource((modeSel.value==='ask'?'/ask/stream?q=':'/agent/stream?q=')+encodeURIComponent(text));
+  const live=el('live','<span class="dot"></span><span>กำลังค้นหาในโบรชัวร์…</span>'); live.dataset.live='1'; out.appendChild(live);
+  const finish=()=>{es.close();live.remove();out.dataset.state='done';go.disabled=false};
+  es.addEventListener('sources',ev=>{live.lastChild.textContent='กำลังอ่าน: '+JSON.parse(ev.data).map(s=>s.product+' หน้า '+s.page).join(' · ')});
+  es.addEventListener('tool',ev=>{const d=JSON.parse(ev.data);
+    const t=el('tool card','<i>'+d.step+'</i><div><code>'+esc(d.name)+'</code>('+esc(Object.values(d.args||{}).join(', '))+')<small>'+esc(d.result.slice(0,150))+'…</small></div>');
+    out.insertBefore(t,live)});
+  es.addEventListener('final',ev=>{const d=JSON.parse(ev.data); finish();
+    if(d.answerable===false){out.appendChild(el('notice',md(d.answer)));return}
+    out.appendChild(el('card answer',md(d.answer)));
+    if((d.citations||[]).length){out.appendChild(el('label','แหล่งอ้างอิง'));
+      d.citations.forEach(c=>out.appendChild(el('card','<div class="cite-h"><span class="pill">'+esc(c.product)+'</span><span class="pg">หน้า '+esc(c.page)+'</span>'+
+        (c.verified?'<span class="ver ok">✓ ตรวจแล้ว</span>':'<span class="ver bad">ไม่พบ quote ในหน้านี้</span>')+'</div><p class="quote">“'+esc(unquote(c.quote))+'”</p>')))}});
+  es.onerror=()=>{finish()};
+}
+document.getElementById('f').onsubmit=e=>{e.preventDefault();ask()};
 </script></body></html>

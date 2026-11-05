@@ -130,3 +130,11 @@ def test_stream_abstain_never_returns_an_empty_answer(monkeypatch):
     monkeypatch.setattr(rag.llm, "chat", lambda *a, **k: iter([piece]))
     final = [e for e in rag.stream_answer("what is the vitality tier?", R()) if e["event"] == "final"][0]["data"]
     assert final["answerable"] is False and final["answer"] == rag.DECLINED
+
+
+def test_system_messages_follow_question_language():
+    from aia_rag.rag import say
+
+    assert say("declined", "What are the Vitality tiers?").startswith("The brochures")
+    assert say("declined", "รางวัล Vitality มีกี่ระดับ") == "โบรชัวร์ไม่ได้ระบุเรื่องนี้"
+    assert say("no_retrieval", "ถามอะไรก็ได้").startswith("ไม่พบ")
