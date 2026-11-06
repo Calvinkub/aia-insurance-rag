@@ -2,6 +2,7 @@ import React from "react";
 import { Video } from "@remotion/media";
 import { AbsoluteFill, Easing, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import timeline from "./demo_timeline.json";
+import { Voice } from "./Voice";
 import { C, fontFamily } from "./theme";
 
 const CAPTIONS: { key: "demo1" | "demo2" | "demo3" | "demo4"; text: string; color: string }[] = [
@@ -18,9 +19,9 @@ const Caption: React.FC<{ text: string; color: string; from: number; to: number 
   return (
     <div
       style={{
-        position: "absolute", left: 120, right: 120, bottom: 70, opacity: o, translate: `0px ${y}px`,
-        background: "rgba(11,18,32,0.92)", border: `3px solid ${color}`, borderRadius: 18, padding: "18px 32px",
-        fontFamily, fontSize: 46, fontWeight: 700, color: C.text,
+        position: "absolute", left: 120, right: 120, bottom: 22, height: 90, display: "flex", alignItems: "center", opacity: o, translate: `0px ${y}px`,
+        background: "rgba(11,18,32,0.92)", border: `3px solid ${color}`, borderRadius: 18, padding: "0 32px",
+        fontFamily, fontSize: 44, fontWeight: 700, color: C.text,
       }}
     >
       {text}
@@ -31,8 +32,12 @@ const Caption: React.FC<{ text: string; color: string; from: number; to: number 
 export const DemoScene: React.FC = () => {
   const { fps } = useVideoConfig();
   return (
-    <AbsoluteFill style={{ backgroundColor: "#ffffff" }}>
-      <Video src={staticFile("demo.mp4")} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+    <AbsoluteFill style={{ backgroundColor: C.bg }}>
+      {/* 16:9 recording scaled to leave a caption band below it, so captions never cover the page */}
+      <Video src={staticFile("demo.mp4")} muted style={{ position: "absolute", top: 0, left: 120, width: 1680, height: 945, objectFit: "cover" }} />
+      {CAPTIONS.map((c) => (
+        <Voice key={`v-${c.key}`} clip={c.key} from={Math.round(timeline[c.key].start * fps) + 6} />
+      ))}
       {CAPTIONS.map((c) => (
         <Caption key={c.key} text={c.text} color={c.color} from={Math.round(timeline[c.key].start * fps)} to={Math.round(timeline[c.key].end * fps) + 30} />
       ))}
