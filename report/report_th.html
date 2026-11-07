@@ -1,119 +1,318 @@
 <!doctype html>
 <html lang="th"><head><meta charset="utf-8"><title>AIA Brochure Q&A: ระบบ RAG และ agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-@page { size: A4; margin: 18mm 17mm; }
-body { font: 10.5pt/1.6 "Sarabun", "Thonburi", "Ayuthaya", serif; color: #1a1a1a; }
-h1 { font-size: 20pt; margin: 0 0 2pt; } h2 { font-size: 13.5pt; margin: 16pt 0 4pt; border-bottom: 1px solid #999; padding-bottom: 2pt; }
-h2, h3 { break-after: avoid; }
-h3 { font-size: 11pt; margin: 10pt 0 3pt; }
-.sub { color: #555; margin-bottom: 10pt; }
-table { border-collapse: collapse; width: 100%; margin: 6pt 0 8pt; font: 9pt/1.4 "Thonburi", "Sarabun", Helvetica, sans-serif; page-break-inside: avoid; }
-th, td { border: 1px solid #bbb; padding: 3pt 5pt; text-align: left; vertical-align: top; } th { background: #eee; }
-td.n, th.n { text-align: right; } tr.hl td { background: #eef6ee; font-weight: 600; }
-code { font: 9pt Menlo, monospace; background: #f3f3f3; padding: 0 2pt; }
-.cap { font: 9pt "Thonburi", "Sarabun", sans-serif; color: #444; margin: -2pt 0 8pt; }
-.box { border-left: 3px solid #b33; background: #fbf3f3; padding: 4pt 8pt; margin: 6pt 0; page-break-inside: avoid; }
-svg { display: block; margin: 6pt auto; max-width: 100%; }
-ul { margin: 3pt 0 3pt 16pt; padding: 0; } li { margin: 2pt 0; }
+@page { size: A4; margin: 16mm 16mm 16mm; }
+:root { --red:#d31145; --red-soft:#fdecef; --ink:#1d1b1c; --muted:#6a6567; --line:#e2dcdd; --ok:#1f7a4d; --ok-soft:#e8f5ee; --warn:#8a5a00; --warn-soft:#fff6e0; --blue:#2b6cb0; --blue-soft:#e9f1fb; --grey:#9a9496; }
+* { box-sizing: border-box; }
+body { font: 10.5pt/1.65 "Noto Sans Thai", "Thonburi", "Sarabun", sans-serif; color: var(--ink); margin: 0; }
+h1 { font-size: 21pt; line-height: 1.3; margin: 0 0 4pt; color: var(--ink); }
+h2 { font-size: 14.5pt; margin: 18pt 0 6pt; color: var(--red); display: flex; align-items: center; gap: 8pt; break-after: avoid; }
+h2 .no { background: var(--red); color: #fff; width: 22pt; height: 22pt; border-radius: 50%; display: inline-grid; place-items: center; font-size: 11pt; }
+h3 { font-size: 11.5pt; margin: 12pt 0 3pt; break-after: avoid; }
+p { margin: 4pt 0; }
+.sub { color: var(--muted); font-size: 9.5pt; margin-bottom: 8pt; }
+code { font: 9pt Menlo, monospace; background: #f4f0f0; padding: 0 2pt; border-radius: 2pt; }
+.tldr { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7pt; margin: 8pt 0 6pt; }
+.stat { border: 1px solid var(--line); border-radius: 8pt; padding: 7pt 8pt; text-align: center; }
+.stat b { display: block; font-size: 19pt; line-height: 1.2; color: var(--red); }
+.stat span { font-size: 8.8pt; color: var(--muted); line-height: 1.35; display: block; }
+.stat.g b { color: var(--ok); } .stat.x b { color: var(--grey); }
+.key { border-left: 4px solid var(--red); background: var(--red-soft); padding: 6pt 10pt; margin: 8pt 0; border-radius: 0 6pt 6pt 0; break-inside: avoid; }
+.key.ok { border-color: var(--ok); background: var(--ok-soft); } .key.warn { border-color: #d9a21b; background: var(--warn-soft); }
+figure { margin: 8pt 0; break-inside: avoid; text-align: center; } figure svg, figure img { max-width: 100%; }
+figcaption { font-size: 9pt; color: var(--muted); margin-top: 3pt; text-align: center; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; align-items: start; }
+.two figure { margin: 4pt 0; } .shot { border: 1px solid var(--line); border-radius: 8pt; }
+table { border-collapse: collapse; width: 100%; margin: 6pt 0; font-size: 9.2pt; line-height: 1.45; break-inside: avoid; }
+th, td { border: 1px solid var(--line); padding: 4pt 6pt; text-align: left; vertical-align: top; }
+th { background: #f6f2f2; font-weight: 600; } td.n, th.n { text-align: right; white-space: nowrap; } tr.hl td { background: var(--ok-soft); font-weight: 600; }
+ul { margin: 3pt 0 3pt 15pt; padding: 0; } li { margin: 3pt 0; }
+.pb { break-before: page; }
+.tag { display: inline-block; font-size: 8.5pt; font-weight: 600; padding: 0 6pt; border-radius: 99pt; background: var(--red-soft); color: var(--red); }
 </style></head><body>
 
-<h1>AIA Brochure Q&amp;A: ระบบ RAG ที่อ้างอิงแหล่งที่มา พร้อม agent</h1>
-<div class="sub">โปรเจกต์ปลายภาควิชา LLM &middot; โค้ด: github.com/Calvinkub/aia-brochure-rag &middot; chat model <code>gemma-4-E4B-it</code>, embeddings <code>bge-m3</code> ผ่าน proxy ของคลาส</div>
+<h1>AIA Brochure Q&amp;A<br><span style="font-size:14pt;font-weight:500;color:var(--muted)">ระบบถาม-ตอบโบรชัวร์ประกัน ที่อ้างอิงหน้าและตรวจ quote ให้ พร้อม agent</span></h1>
+<div class="sub">โปรเจกต์ปลายภาควิชา LLM &middot; โค้ด: github.com/Calvinkub/aia-insurance-rag &middot; chat model <code>gemma-4-E4B-it</code> และ embeddings <code>bge-m3</code> ผ่าน proxy ของคลาส</div>
 
-<h2>1. ปัญหาและกลุ่มผู้ใช้</h2>
-<p>โบรชัวร์ประกันมีข้อมูลที่ลูกค้าต้องใช้ เช่น ระยะเวลารอคอย (waiting period) อายุรับประกัน เปอร์เซ็นต์ผลประโยชน์ และค่าธรรมเนียม แต่ข้อมูลเหล่านี้อยู่ในตารางและหมายเหตุที่กระจายอยู่ในไฟล์ PDF หลายไฟล์ แชตบอตทั่วไปตอบจากความจำ ซึ่งสำหรับผลิตภัณฑ์เฉพาะของไทยมักเป็นการเดาที่มั่นใจเกินจริง โปรเจกต์นี้ตอบคำถามเกี่ยวกับผลิตภัณฑ์ AIA ประเทศไทย <em>จากข้อความในโบรชัวร์เท่านั้น</em> ระบุหน้าที่อ้างอิง และตอบว่า "โบรชัวร์ไม่ได้ระบุเรื่องนี้" เมื่อไม่มีหลักฐาน</p>
-<p><strong>ใครใช้:</strong> ผู้สนใจซื้อประกันหรือตัวแทนที่ต้องการคำตอบที่เร็วและตรวจสอบได้ ไม่ใช่คำแนะนำให้ซื้อ โปรเจกต์นี้เป็นงานในรายวิชา ไม่ใช่คำแนะนำด้านประกัน และโบรชัวร์มีอายุปี 2019&ndash;2022 ซึ่งอาจล้าสมัยแล้ว</p>
-<p><strong>ทำไมแอปอ้างอิงตอบไม่ได้:</strong> คลังเอกสารคือ PDF สาธารณะของ AIA ประเทศไทย 16 ไฟล์ ดาวน์โหลดด้วย <code>scripts/fetch_corpus.py</code> มี 15 ไฟล์ที่ดึงข้อความภาษาอังกฤษได้ (94 หน้า, 290 chunks) โมเดลแบบ closed-book ไม่มีความรู้ที่เชื่อถือได้เกี่ยวกับเอกสารเหล่านี้ ผลประเมินด้านล่างยืนยันเรื่องนี้ (แม่นยำเพียง 7% เมื่อบังคับให้เดา)</p>
+<div class="tldr">
+ <div class="stat"><b>26/28</b><span>ตอบถูกเมื่อใช้ RAG<br>(ทดสอบบนชุดเอง)</span></div>
+ <div class="stat x"><b>2/28</b><span>ตอบถูกเมื่อไม่มีโบรชัวร์<br>(บังคับให้เดา)</span></div>
+ <div class="stat g"><b>6/6</b><span>ข้อที่ไม่มีในโบรชัวร์<br>ระบบปฏิเสธครบ</span></div>
+ <div class="stat"><b>2</b><span>ข้อที่ผิด ทั้งสองข้อ<br>วิเคราะห์สาเหตุแล้ว</span></div>
+</div>
+<div class="key"><b>สรุปสั้นๆ</b> ระบบนี้ตอบคำถามเรื่องประกัน AIA ไทย <u>จากโบรชัวร์เท่านั้น</u> ทุกคำตอบมีหน้าอ้างอิงและ quote ที่โค้ดตรวจแล้วว่ามีอยู่จริงในหน้านั้น ถ้าโบรชัวร์ไม่ได้พูดถึงเรื่องนั้น ระบบจะบอกว่า "โบรชัวร์ไม่ได้ระบุ" แทนที่จะเดา ตัวเลขทั้งหมดมาจากชุดทดสอบเล็ก (34 ข้อ) ที่เราสร้างและปรับจูนเอง จึงบอกได้แค่ทิศทาง ไม่ใช่ความแม่นยำจริงในโลกใช้งาน</div>
 
-<h2>2. การออกแบบ</h2>
-<svg viewBox="0 0 700 215" width="700" height="215" font-family="Thonburi, Sarabun, Helvetica, sans-serif" font-size="10.5">
-  <defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L8,4L0,8z" fill="#444"/></marker></defs>
-  <g fill="#f5f5f5" stroke="#666">
-    <rect x="8" y="12" width="92" height="44" rx="4"/><rect x="128" y="12" width="150" height="44" rx="4"/>
-    <rect x="306" y="12" width="110" height="44" rx="4"/><rect x="444" y="12" width="118" height="44" rx="4"/><rect x="590" y="12" width="102" height="44" rx="4"/>
-    <rect x="128" y="86" width="150" height="40" rx="4" fill="#fff7e6"/><rect x="306" y="86" width="256" height="40" rx="4" fill="#e9f1fb"/>
-    <rect x="8" y="160" width="270" height="44" rx="4" fill="#eef6ee"/><rect x="306" y="160" width="386" height="44" rx="4" fill="#eef6ee"/>
-  </g>
-  <g text-anchor="middle" fill="#111">
-    <text x="54" y="31">คำถาม</text><text x="54" y="46" font-size="9" fill="#555">UI / REST / SSE</text>
-    <text x="203" y="31">Hybrid retriever</text><text x="203" y="46" font-size="9" fill="#555">BM25 + bge-m3, RRF (k=60)</text>
-    <text x="361" y="31">Prompt S1..S5</text><text x="361" y="46" font-size="9" fill="#555">ป้ายผลิตภัณฑ์ + หน้า</text>
-    <text x="503" y="31">gemma-4-E4B-it</text><text x="503" y="46" font-size="9" fill="#555">temperature 0</text>
-    <text x="641" y="31">ตรวจสอบ</text><text x="641" y="46" font-size="9" fill="#555">pydantic ModelAnswer</text>
-    <text x="203" y="103">Disk cache</text><text x="203" y="118" font-size="9" fill="#555">chat + embeddings ผลคงที่</text>
-    <text x="434" y="103">Agent loop (สูงสุด 6 step แล้วหยุดทันที)</text><text x="434" y="118" font-size="9" fill="#555">tools: search_brochures, list_products, calculate (AST whitelist)</text>
-    <text x="143" y="179">คำตอบ + citation</text><text x="143" y="194" font-size="9" fill="#555">ทิ้ง id ที่แต่งขึ้น; ตรวจ quote กับ passage</text>
-    <text x="499" y="179">ชุดประเมิน (eval/run_eval.py)</text><text x="499" y="194" font-size="9" fill="#555">ตอบได้ 28 + ตอบไม่ได้ 6; hit@k, MRR, accuracy, abstain, ตรวจ citation</text>
-  </g>
-  <g stroke="#444" stroke-width="1.2" fill="none" marker-end="url(#a)">
-    <path d="M100,34H126"/><path d="M278,34H304"/><path d="M416,34H442"/><path d="M562,34H588"/>
-    <path d="M641,56V143H143V158"/><path d="M203,86V58"/><path d="M434,86V58" stroke-dasharray="4 3"/>
-    <path d="M278,182H304" stroke-dasharray="2 3"/>
-  </g>
+<h2><span class="no">1</span>ปัญหาและผู้ใช้</h2>
+<p>ข้อมูลที่ลูกค้าต้องการจริง เช่น <b>ระยะเวลารอคอย (waiting period)</b> อายุรับประกัน เปอร์เซ็นต์ผลประโยชน์ ฝังอยู่ในตารางและหมายเหตุตัวเล็กของ PDF หลายไฟล์ แชตบอตทั่วไปตอบจากความจำ ซึ่งกับผลิตภัณฑ์เฉพาะของไทยมักเป็นการเดาที่ฟังดูมั่นใจ</p>
+<div class="two">
+<div>
+<p><b>ใครใช้:</b> ผู้สนใจซื้อประกัน หรือตัวแทนที่อยากได้คำตอบเร็วและตรวจสอบเองได้ เพราะทุกคำตอบชี้กลับไปที่หน้าในโบรชัวร์</p>
+<p><b>คลังเอกสาร:</b> PDF สาธารณะของ AIA ประเทศไทย 16 ไฟล์ ดึงข้อความภาษาอังกฤษได้ 15 ไฟล์ (94 หน้า, 290 chunks)</p>
+<p><b>ข้อควรรู้:</b> โปรเจกต์นี้เป็นงานเรียน ไม่ใช่คำแนะนำด้านประกัน และไม่เกี่ยวข้องกับ AIA โบรชัวร์มีอายุปี 2019&ndash;2022 อาจล้าสมัย</p>
+</div>
+<div>
+<svg viewBox="0 0 300 150" width="100%" font-family="Noto Sans Thai, Thonburi, sans-serif" font-size="11">
+ <rect x="2" y="4" width="140" height="140" rx="10" fill="#f4f0f0" stroke="#cfc8c9"/>
+ <text x="72" y="24" text-anchor="middle" font-weight="700" fill="#6a6567">แชตบอตทั่วไป</text>
+ <rect x="14" y="36" width="116" height="30" rx="8" fill="#fff" stroke="#cfc8c9"/><text x="72" y="55" text-anchor="middle">รอคอยกี่วัน?</text>
+ <rect x="14" y="76" width="116" height="52" rx="8" fill="#fff" stroke="#b3261e"/>
+ <text x="72" y="95" text-anchor="middle" fill="#b3261e" font-weight="600">"90 วัน"</text><text x="72" y="111" text-anchor="middle" font-size="9.5" fill="#6a6567">มั่นใจ แต่ไม่มีที่มา</text>
+ <rect x="158" y="4" width="140" height="140" rx="10" fill="#fdecef" stroke="#d31145"/>
+ <text x="228" y="24" text-anchor="middle" font-weight="700" fill="#d31145">ระบบนี้</text>
+ <rect x="170" y="36" width="116" height="30" rx="8" fill="#fff" stroke="#d31145"/><text x="228" y="55" text-anchor="middle">รอคอยกี่วัน?</text>
+ <rect x="170" y="76" width="116" height="52" rx="8" fill="#fff" stroke="#1f7a4d"/>
+ <text x="228" y="95" text-anchor="middle" fill="#1f7a4d" font-weight="600">60 วัน · หน้า 7</text><text x="228" y="111" text-anchor="middle" font-size="9.5" fill="#6a6567">✓ quote ตรวจแล้ว</text>
 </svg>
-<div class="cap">รูปที่ 1 เส้นทางของคำถาม (แถวบน), agent ที่เป็นอีกทางเลือกบน retriever ตัวเดียวกัน (สีฟ้า), และชุดประเมินที่ให้คะแนนผลลัพธ์ของเส้นทางนั้น</div>
+<figcaption style="text-align:center">รูปที่ 1 ความต่างที่ระบบนี้ต้องการ (ตัวเลขของแชตบอตทั่วไปเป็นภาพประกอบ ไม่ได้วัด)</figcaption>
+</div></div>
 
-<table><tr><th style="width:24%">เทคนิคจากคอร์ส</th><th>ใช้อย่างไรในโปรเจกต์</th><th style="width:26%">เหตุผล</th></tr>
-<tr><td>Prompting + structured output พร้อม schema validation</td><td>โมเดลต้องตอบเป็น JSON ตรงกับ <code>ModelAnswer</code> (answerable, answer, citations) โค้ดตัด code fence ออก ลอง repair หนึ่งครั้ง ถ้าไม่ผ่านระบบจะงดตอบ (abstain)</td><td>โค้ดส่วนถัดไปไม่เชื่อข้อความอิสระ</td></tr>
-<tr><td>RAG พร้อม citation</td><td>แหล่งที่มาถูกเลขเป็น S1..S5 โมเดลอ้าง id ไม่ใช่เลขหน้า โค้ดแปลง id เป็นผลิตภัณฑ์และหน้า ทิ้ง id ที่โมเดลแต่งขึ้น และตั้ง <code>verified</code> ก็ต่อเมื่อ quote ปรากฏอยู่ใน passage ที่อ้างจริง (เทียบหลัง normalize ให้เหลือตัวอักษรและตัวเลข)</td><td>citation ที่ผู้ใช้ตรวจสอบไม่ได้ เป็นเพียงของตกแต่ง</td></tr>
-<tr><td>การประเมิน retrieval และคำตอบ</td><td>gold set ที่ติดป้ายด้วยมือ, hit@k และ MRR ระดับหน้า, accuracy ของคำตอบ, การ abstain, การตรวจ citation, baseline สามแบบ</td><td>เป็นหมวดที่บังคับ และเป็นเครื่องมือที่ใช้ตัดสินทุกการออกแบบด้านล่าง</td></tr>
-<tr><td>Agent loop พร้อม tools</td><td>ใช้ function calling แบบ native มี allow-list, ตรวจ argument ด้วย pydantic, จำกัด 6 step, และถือผลลัพธ์ของ tool เป็นข้อมูลที่ไม่น่าเชื่อถือ <code>calculate</code> คำนวณเลขผ่าน AST whitelist (ไม่มี name, call หรือ attribute; จำกัด exponent)</td><td>ให้คำถามหลายขั้น (เทียบสองผลิตภัณฑ์, คำนวณผลประโยชน์) ใช้ search ร่วมกับการคำนวณได้อย่างปลอดภัย</td></tr>
-<tr><td>Served interface</td><td>FastAPI: <code>POST /ask</code>, SSE <code>GET /ask/stream</code> และ <code>/agent/stream</code>, UI แบบเรียบง่ายที่ <code>/</code></td><td>Streaming แสดงแหล่งที่ค้นพบก่อน และแสดง tool call ทันทีที่เกิดขึ้น</td></tr></table>
-<p>เลือก hybrid retrieval แทน dense อย่างเดียว เพราะคำถามเกี่ยวกับโบรชัวร์ผสมทั้งคำที่ต้องตรงเป๊ะ (ตัวเลข ชื่อผลิตภัณฑ์) และการถอดความ reciprocal-rank fusion ไม่ต้องปรับสเกลคะแนน API key และ base URL อ่านจาก environment เท่านั้น และไม่มี secret ใน commit</p>
+<h2><span class="no">2</span>การออกแบบ</h2>
+<p style="break-after:avoid">คำถามหนึ่งข้อผ่าน 5 ขั้น ตามรูปที่ 2 ส่วน agent (สีฟ้า) เป็นอีกทางเลือกที่ใช้ retriever ตัวเดียวกัน</p>
+<figure>
+<svg viewBox="0 0 720 300" width="720" font-family="Noto Sans Thai, Thonburi, sans-serif" font-size="11.5">
+ <defs><marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L8,4L0,8z" fill="#555"/></marker></defs>
+ <g stroke-width="1.3">
+  <rect x="6" y="20" width="104" height="62" rx="9" fill="#fff" stroke="#999"/>
+  <rect x="136" y="20" width="136" height="62" rx="9" fill="#fdecef" stroke="#d31145"/>
+  <rect x="298" y="20" width="116" height="62" rx="9" fill="#fff" stroke="#999"/>
+  <rect x="440" y="20" width="116" height="62" rx="9" fill="#fff" stroke="#999"/>
+  <rect x="582" y="20" width="132" height="62" rx="9" fill="#e8f5ee" stroke="#1f7a4d"/>
+  <rect x="136" y="118" width="278" height="64" rx="9" fill="#e9f1fb" stroke="#2b6cb0"/>
+  <rect x="440" y="118" width="274" height="64" rx="9" fill="#f6f2f2" stroke="#999" stroke-dasharray="4 3"/>
+  <rect x="6" y="218" width="300" height="66" rx="9" fill="#fff6e0" stroke="#d9a21b"/>
+  <rect x="332" y="218" width="382" height="66" rx="9" fill="#f6f2f2" stroke="#999" stroke-dasharray="4 3"/>
+ </g>
+ <g text-anchor="middle">
+  <text x="58" y="44" font-weight="700">① คำถาม</text><text x="58" y="62" font-size="9.5" fill="#6a6567">ไทย / อังกฤษ</text><text x="58" y="74" font-size="9.5" fill="#6a6567">UI · REST · SSE</text>
+  <text x="204" y="44" font-weight="700" fill="#d31145">② Hybrid retriever</text><text x="204" y="62" font-size="9.5" fill="#6a6567">BM25 (คำตรงตัว)</text><text x="204" y="74" font-size="9.5" fill="#6a6567">+ bge-m3 (ความหมาย) → RRF</text>
+  <text x="356" y="44" font-weight="700">③ Prompt</text><text x="356" y="62" font-size="9.5" fill="#6a6567">top-5 ติดป้าย S1..S5</text><text x="356" y="74" font-size="9.5" fill="#6a6567">+ ชื่อผลิตภัณฑ์ + หน้า</text>
+  <text x="498" y="44" font-weight="700">④ gemma-4-E4B-it</text><text x="498" y="62" font-size="9.5" fill="#6a6567">temperature 0</text><text x="498" y="74" font-size="9.5" fill="#6a6567">ตอบเป็น JSON</text>
+  <text x="648" y="44" font-weight="700" fill="#1f7a4d">⑤ ตรวจ + citation</text><text x="648" y="62" font-size="9.5" fill="#6a6567">pydantic schema</text><text x="648" y="74" font-size="9.5" fill="#6a6567">quote อยู่ใน passage จริง?</text>
+  <text x="275" y="142" font-weight="700" fill="#2b6cb0">Agent loop (ทางเลือก)</text><text x="275" y="160" font-size="9.5" fill="#6a6567">เรียก tool ได้สูงสุด 6 step แล้วหยุด</text><text x="275" y="173" font-size="9.5" fill="#6a6567">search_brochures · list_products · calculate</text>
+  <text x="577" y="142" font-weight="700" fill="#555">Disk cache</text><text x="577" y="160" font-size="9.5" fill="#6a6567">เก็บผล chat + embeddings</text><text x="577" y="173" font-size="9.5" fill="#6a6567">รันซ้ำแล้วได้ผลเหมือนเดิม</text>
+  <text x="156" y="242" font-weight="700" fill="#8a5a00">ผลลัพธ์ต่อผู้ใช้</text><text x="156" y="260" font-size="9.5" fill="#6a6567">คำตอบ + หน้า + quote + สถานะ "ตรวจแล้ว"</text><text x="156" y="274" font-size="9.5" fill="#6a6567">หรือ "โบรชัวร์ไม่ได้ระบุเรื่องนี้" (abstain)</text>
+  <text x="523" y="242" font-weight="700" fill="#555">ชุดประเมิน eval/run_eval.py</text><text x="523" y="260" font-size="9.5" fill="#6a6567">ถูก 28 ข้อ + ไม่ควรตอบ 6 ข้อ</text><text x="523" y="274" font-size="9.5" fill="#6a6567">hit@k · MRR · accuracy · abstain · citation</text>
+ </g>
+ <g stroke="#555" stroke-width="1.4" fill="none" marker-end="url(#ar)">
+  <path d="M110,51H134"/><path d="M272,51H296"/><path d="M414,51H438"/><path d="M556,51H580"/>
+  <path d="M648,82V100H122V216"/><path d="M204,118V84" stroke="#2b6cb0"/><path d="M414,150H438" stroke-dasharray="4 3"/><path d="M306,251H330" stroke-dasharray="2 3"/>
+ </g>
+</svg>
+<figcaption>รูปที่ 2 เส้นทางของคำถาม (แถวบน) agent ที่ใช้ retriever ร่วมกัน (สีฟ้า) และชุดประเมินที่ให้คะแนนผลลัพธ์ (ขีดประ)</figcaption>
+</figure>
 
-<h2>3. การประเมิน</h2>
-<p><strong>ชุดทดสอบ</strong> (<code>eval/gold.jsonl</code>): คำถามที่ตอบได้ 28 ข้อ แต่ละข้อมีหลักฐานเป็น quote ตรงตัวอักษร ผลิตภัณฑ์และหน้าที่ถูกต้อง และ keyword ที่ต้องมี บวกคำถามที่ตอบไม่ได้ 6 ข้อ ซึ่งใกล้เคียงหัวข้อแต่ไม่มีในคลังเอกสาร (เช่น ระดับรางวัลของ Vitality) <code>eval/check_gold.py</code> ตรวจว่า quote ทุกอันอยู่ในข้อความของหน้านั้นจริง และตรวจว่าคำที่ใช้ในข้อที่ตอบไม่ได้ไม่ปรากฏในคลังเอกสาร คำถามร่างโดยใช้ AI ช่วยจากข้อความโบรชัวร์ การตรวจ quote ช่วยให้ป้ายกำกับน่าเชื่อถือ แต่ไม่ใช่ป้ายกำกับอิสระจากมนุษย์</p>
-<p><strong>เมตริก</strong> Retrieval: hit@k และ MRR โดย hit คือ chunk ใน top-k ที่มาจากผลิตภัณฑ์และหน้าที่ถูกต้อง ส่วนคำตอบ: <em>accuracy</em> (keyword ที่ต้องมีปรากฏครบเป็นคำเต็ม), <em>false abstain</em> (คำถามที่ตอบได้แต่ระบบปฏิเสธ), <em>abstain on unanswerable</em>, <em>cites gold page</em> และ <em>citation verified</em> (สัดส่วน citation ที่ quote อยู่ใน passage จริง) ทุกการรันใช้ temperature 0 และ cache บนดิสก์ ผลจึงทำซ้ำได้</p>
-<p><strong>Baseline</strong> (a) closed-book อนุญาตให้ปฏิเสธ (b) closed-book บังคับให้เดา (c) BM25 RAG ที่ใช้ chunk ชุดเดียวกัน แบบแรกได้ 0 เพราะโมเดลปฏิเสธทุกข้อเท่านั้น ดังนั้น (b) จึงเป็น baseline closed-book ที่ให้ข้อมูลจริง</p>
+<h3>ตัวอย่างจริง: quote ถูกตรวจอย่างไร</h3>
+<figure>
+<svg viewBox="0 0 720 150" width="720" font-family="Noto Sans Thai, Thonburi, sans-serif" font-size="11">
+ <g stroke-width="1.2">
+  <rect x="4" y="8" width="170" height="130" rx="9" fill="#f6f2f2" stroke="#bbb"/>
+  <rect x="198" y="8" width="250" height="130" rx="9" fill="#fff" stroke="#d31145"/>
+  <rect x="472" y="8" width="244" height="130" rx="9" fill="#e8f5ee" stroke="#1f7a4d"/>
+ </g>
+ <g font-size="9.5" fill="#6a6567">
+  <text x="14" y="30" font-weight="700" font-size="11" fill="#1d1b1c">โมเดลตอบ (JSON)</text>
+  <text x="14" y="50">answerable: true</text><text x="14" y="66">answer: "60 วัน ..."</text>
+  <text x="14" y="82">citations:</text><text x="22" y="98">source: "S2"</text><text x="22" y="114">quote: "Waiting Period</text><text x="22" y="128">... is 60 days ..."</text>
+  <text x="208" y="30" font-weight="700" font-size="11" fill="#d31145">โค้ดตรวจ (ไม่เชื่อโมเดล)</text>
+  <text x="208" y="52" fill="#1d1b1c">1. S2 มีอยู่ใน top-5 จริงไหม?</text><text x="222" y="67">ไม่มี → ทิ้ง citation นั้น</text>
+  <text x="208" y="86" fill="#1d1b1c">2. แปลง S2 → ผลิตภัณฑ์ + หน้า (จากข้อมูล ไม่ใช่โมเดล)</text>
+  <text x="208" y="106" fill="#1d1b1c">3. normalize ทั้งสองฝั่ง (เหลือตัวอักษร/ตัวเลข)</text><text x="222" y="121">แล้วดูว่า quote เป็น substring ของ passage</text>
+  <text x="482" y="30" font-weight="700" font-size="11" fill="#1f7a4d">ผู้ใช้เห็น</text>
+  <rect x="482" y="42" width="224" height="86" rx="7" fill="#fff" stroke="#e2dcdd"/>
+  <rect x="490" y="50" width="76" height="16" rx="8" fill="#fdecef"/><text x="528" y="62" text-anchor="middle" fill="#d31145" font-weight="700">AIA CI Care</text>
+  <text x="574" y="62" fill="#6a6567">หน้า 7</text><text x="700" y="62" fill="#1f7a4d" font-weight="700" text-anchor="end">✓ ตรวจแล้ว</text>
+  <text x="490" y="86" font-style="italic">"Waiting Period of AIA CI Care</text><text x="490" y="100" font-style="italic">is 60 days from the contract's</text><text x="490" y="114" font-style="italic">effective date ..."</text>
+ </g>
+ <g stroke="#555" stroke-width="1.4" fill="none" marker-end="url(#ar)"><path d="M174,72H196"/><path d="M448,72H470"/></g>
+</svg>
+<figcaption>รูปที่ 3 โมเดลอ้าง id (S1..S5) ไม่ใช่เลขหน้า โค้ดเป็นผู้แปลงเป็นผลิตภัณฑ์และหน้า และตั้งสถานะ "ตรวจแล้ว" เมื่อ quote อยู่ใน passage นั้นจริงเท่านั้น</figcaption>
+</figure>
 
-<h2>4. ผลลัพธ์</h2>
-<h3>4.1 คำตอบแบบ end-to-end (chunk 180 คำ / overlap 40, k = 5)</h3>
-<table><tr><th>ระบบ</th><th class="n">accuracy</th><th class="n">false abstain</th><th class="n">abstain ข้อที่ตอบไม่ได้</th><th class="n">อ้างหน้าที่ถูก</th><th class="n">citation verified</th></tr>
+<h3>เทคนิคจากคอร์สที่ใช้ และเหตุผล</h3>
+<table><tr><th style="width:23%">เทคนิค</th><th>ใช้ตรงไหน</th><th style="width:27%">ทำไม</th></tr>
+<tr><td>Structured output + schema validation</td><td>โมเดลต้องตอบ JSON ตรง <code>ModelAnswer</code> โค้ดตัด code fence ลอง repair 1 ครั้ง ถ้ายังไม่ผ่านจะ abstain</td><td>โค้ดส่วนถัดไปไม่ควรเชื่อข้อความอิสระ</td></tr>
+<tr><td>RAG + citation ที่ตรวจได้</td><td>รูปที่ 3: id แทนเลขหน้า ทิ้ง id ที่แต่งขึ้น ตรวจ quote กับ passage</td><td>citation ที่ผู้ใช้ตรวจเองไม่ได้ ก็เป็นแค่ของตกแต่ง</td></tr>
+<tr><td>Hybrid retrieval (BM25 + dense + RRF)</td><td>BM25 จับตัวเลขและชื่อผลิตภัณฑ์ที่ต้องตรงเป๊ะ dense จับคำถามที่ถอดความ</td><td>RRF ไม่ต้องปรับสเกลคะแนนของสองระบบ</td></tr>
+<tr><td>Agent loop + tools</td><td>function calling แบบ native, allow-list, ตรวจ argument ด้วย pydantic, จำกัด 6 step, <code>calculate</code> ใช้ AST whitelist (ไม่มี name/call/attribute)</td><td>คำถามหลายขั้น เช่น เทียบสองผลิตภัณฑ์หรือคำนวณผลประโยชน์</td></tr>
+<tr><td>Evaluation เทียบ baseline</td><td>gold set ติดป้ายเอง, hit@k, MRR, accuracy, abstain, citation check</td><td>ใช้ตัดสินทุกการออกแบบข้างต้น</td></tr>
+<tr><td>Served interface (FastAPI + SSE)</td><td><code>/ask/stream</code>, <code>/agent/stream</code>, หน้าเว็บที่ <code>/</code></td><td>แสดงแหล่งที่พบก่อน และแสดง tool call ทีละขั้น</td></tr></table>
+
+<h3>หน้าตาของแอป (ภาษาไทย)</h3>
+<div class="two">
+<figure><img class="shot" src="fig/ui_success.png" alt="ตอบได้"><figcaption>รูปที่ 4ก ถามเป็นภาษาไทย ตอบพร้อมหน้าและ quote ที่ "ตรวจแล้ว"</figcaption></figure>
+<figure><img class="shot" src="fig/ui_abstain.png" alt="ปฏิเสธ"><figcaption>รูปที่ 4ข เรื่องที่ไม่มีในโบรชัวร์ ระบบปฏิเสธแทนการเดา</figcaption></figure>
+</div>
+
+<h2><span class="no">3</span>การประเมิน</h2>
+<div class="two">
+<div>
+<h3 style="margin-top:2pt">ชุดทดสอบ (34 ข้อ)</h3>
+<ul>
+<li><b>ตอบได้ 28 ข้อ</b> แต่ละข้อมี quote หลักฐาน ผลิตภัณฑ์ หน้า และ keyword ที่ต้องมี</li>
+<li><b>ตอบไม่ได้ 6 ข้อ</b> ใกล้เคียงหัวข้อแต่ไม่มีในคลัง (เช่น ระดับรางวัล Vitality)</li>
+<li><code>eval/check_gold.py</code> ตรวจว่า quote ทุกอันอยู่ในหน้านั้นจริง</li>
+</ul>
+<div class="key warn" style="margin-top:6pt"><b>ข้อจำกัดของชุดนี้</b> คำถามร่างโดย AI จากข้อความโบรชัวร์ แล้วตรวจ quote ซึ่งช่วยให้ป้ายน่าเชื่อถือ แต่ไม่ใช่ป้ายอิสระจากมนุษย์ ชุดนี้เป็นภาษาอังกฤษทั้งหมด</div>
+</div>
+<div>
+<h3 style="margin-top:2pt">เมตริก</h3>
+<ul>
+<li><b>Retrieval:</b> hit@k และ MRR (hit = chunk ใน top-k มาจากผลิตภัณฑ์และหน้าที่ถูก)</li>
+<li><b>accuracy:</b> keyword ที่ต้องมีปรากฏครบเป็นคำเต็ม</li>
+<li><b>false abstain:</b> ตอบได้แต่ระบบปฏิเสธ</li>
+<li><b>abstain on unanswerable:</b> ข้อที่ไม่ควรตอบ ระบบปฏิเสธไหม</li>
+<li><b>citation verified:</b> สัดส่วน quote ที่อยู่ใน passage จริง</li>
+</ul>
+</div></div>
+<p><b>Baseline 3 แบบ:</b> (a) closed-book ปฏิเสธได้ (b) closed-book บังคับเดา (c) BM25 RAG ที่ใช้ chunk ชุดเดียวกัน แบบ (a) ได้ 0 เพราะโมเดลปฏิเสธทุกข้อ จึงให้ข้อมูลน้อย ดังนั้น (b) คือ baseline closed-book ที่ใช้เทียบจริง ทุกการรันใช้ temperature 0 และ cache บนดิสก์ รันซ้ำแล้วได้ผลเดิม</p>
+
+<h2><span class="no">4</span>ผลลัพธ์</h2>
+<h3>4.1 คำตอบแบบ end-to-end</h3>
+<figure>
+<svg viewBox="0 0 720 250" width="720" font-family="Noto Sans Thai, Thonburi, sans-serif" font-size="11">
+ <g stroke="#e2dcdd"><line x1="250" y1="14" x2="250" y2="206"/><line x1="346" y1="14" x2="346" y2="206"/><line x1="442" y1="14" x2="442" y2="206"/><line x1="538" y1="14" x2="538" y2="206"/><line x1="634" y1="14" x2="634" y2="206"/></g>
+ <g fill="#6a6567" text-anchor="middle" font-size="9.5"><text x="250" y="224">0</text><text x="346" y="224">0.25</text><text x="442" y="224">0.5</text><text x="538" y="224">0.75</text><text x="634" y="224">1.0</text></g>
+ <text x="442" y="243" text-anchor="middle" fill="#6a6567" font-size="9.5">accuracy ของคำตอบ (n = 28 ข้อที่ตอบได้)</text>
+ <g text-anchor="end" fill="#1d1b1c"><text x="240" y="40">closed-book (ปฏิเสธได้)</text><text x="240" y="82">closed-book (บังคับเดา)</text><text x="240" y="124">BM25 RAG</text><text x="240" y="166" font-weight="700">hybrid RAG (ที่ใช้จริง)</text><text x="240" y="196" font-size="10" fill="#6a6567">hybrid + min_score 0.65</text></g>
+ <rect x="250" y="26" width="2" height="20" fill="#9a9496"/><text x="260" y="40" fill="#6a6567">0.00</text>
+ <rect x="250" y="68" width="27" height="20" fill="#9a9496"/><text x="286" y="82" fill="#6a6567">0.07</text>
+ <rect x="250" y="110" width="357" height="20" fill="#2b6cb0"/><text x="616" y="124" fill="#1d1b1c" font-weight="600">0.93</text>
+ <rect x="250" y="152" width="357" height="20" fill="#1f7a4d"/><text x="616" y="166" fill="#1d1b1c" font-weight="700">0.93</text>
+ <rect x="250" y="182" width="341" height="20" fill="#d9a21b"/><text x="600" y="196" fill="#1d1b1c" font-weight="600">0.89</text>
+</svg>
+<figcaption>รูปที่ 5 accuracy ของแต่ละระบบ (ข้อมูลเดียวกับตารางที่ 1)</figcaption>
+</figure>
+
+<table><tr><th>ระบบ</th><th class="n">accuracy</th><th class="n">false abstain</th><th class="n">abstain ข้อที่ไม่ควรตอบ</th><th class="n">อ้างหน้าถูก</th><th class="n">citation verified</th></tr>
 <tr><td>closed-book, ปฏิเสธได้ (baseline)</td><td class="n">0.00</td><td class="n">1.00</td><td class="n">1.00</td><td class="n">&ndash;</td><td class="n">&ndash;</td></tr>
 <tr><td>closed-book, บังคับเดา (baseline)</td><td class="n">0.07</td><td class="n">0.29</td><td class="n">0.50</td><td class="n">&ndash;</td><td class="n">&ndash;</td></tr>
-<tr><td>BM25 RAG, ไม่มี floor (baseline)</td><td class="n">0.93</td><td class="n">0.04</td><td class="n">1.00</td><td class="n">0.93</td><td class="n">0.95</td></tr>
-<tr class="hl"><td>hybrid RAG, ไม่มี floor (ที่ใช้จริง)</td><td class="n">0.93</td><td class="n">0.00</td><td class="n">1.00</td><td class="n">0.93</td><td class="n">1.00</td></tr>
-<tr><td>hybrid RAG, <code>min_score</code> = 0.65</td><td class="n">0.89</td><td class="n">0.04</td><td class="n">1.00</td><td class="n">0.89</td><td class="n">1.00</td></tr></table>
-<div class="cap">ตารางที่ 1 n = 28 ข้อที่ตอบได้, 6 ข้อที่ตอบไม่ได้ ต่างกัน 1 ข้อ = accuracy ต่างกัน 0.036</div>
+<tr><td>BM25 RAG (baseline)</td><td class="n">0.93</td><td class="n">0.04</td><td class="n">1.00</td><td class="n">0.93</td><td class="n">0.95</td></tr>
+<tr class="hl"><td>hybrid RAG (ที่ใช้จริง)</td><td class="n">0.93</td><td class="n">0.00</td><td class="n">1.00</td><td class="n">0.93</td><td class="n">1.00</td></tr>
+<tr><td>hybrid RAG + <code>min_score</code> 0.65</td><td class="n">0.89</td><td class="n">0.04</td><td class="n">1.00</td><td class="n">0.89</td><td class="n">1.00</td></tr></table>
+<figcaption style="text-align:left">ตารางที่ 1 chunk 180 คำ / overlap 40, k = 5 ความต่าง 1 ข้อ = accuracy ต่างกัน 0.036</figcaption>
+
+<div class="key ok"><b>อ่านผลอย่างตรงไปตรงมา</b>
 <ul>
-<li><strong>Retrieval คือสิ่งที่ทำให้ระบบใช้ได้</strong> closed-book แบบบังคับเดาตอบถูก 2 จาก 28 ข้อ และยังตอบ 3 จาก 6 ข้อที่ตอบไม่ได้ทั้งที่ไม่ควรตอบ เมื่อใช้ retrieval: ถูก 26 จาก 28 และไม่ตอบข้อที่ตอบไม่ได้เลย</li>
-<li><strong>การปรับปรุงที่วัดได้เมื่อเทียบกับค่าเริ่มต้นแบบง่าย</strong> (BM25, chunk เดียวกัน): hybrid เพิ่ม MRR จาก 0.832 เป็น 0.882, hit@1 จาก 0.79 เป็น 0.82, สัดส่วน citation-verified จาก 0.95 เป็น 1.00 และกำจัด false abstain ที่มีอยู่หนึ่งข้อ แต่ n = 28 หมายถึงต่างกันหนึ่งหรือสองข้อ เป็นเพียงทิศทาง ไม่ใช่ผลที่มีนัยสำคัญทางสถิติ</li>
-<li><strong><code>min_score</code> เป็นผลลบ</strong> เกณฑ์ 0.65 ดูเหมือนไม่มีต้นทุนเมื่อทดสอบระดับคำถาม (เก็บข้อที่ตอบได้ครบ 28 ข้อ และกันข้อที่ตอบไม่ได้ได้ 4 จาก 6) แต่เมื่อใช้เป็น floor ระดับ chunk มันตัด chunk ที่ถูกต้องทิ้ง (cosine 0.62) และทำให้เสียคำตอบไปหนึ่งข้อ (0.93 เหลือ 0.89) โมเดลปฏิเสธข้อที่ตอบไม่ได้ครบ 6 ข้ออยู่แล้ว จึงตั้งค่าเริ่มต้นเป็น 0</li>
-</ul>
+<li><b>Retrieval คือสิ่งที่ทำให้ระบบใช้ได้:</b> ไม่มีโบรชัวร์ ตอบถูก 2 จาก 28 และยังตอบ 3 จาก 6 ข้อที่ไม่ควรตอบ มีโบรชัวร์ ถูก 26 จาก 28 และปฏิเสธข้อที่ไม่ควรตอบครบ</li>
+<li><b>hybrid เหนือ BM25 แค่เล็กน้อย:</b> accuracy เท่ากัน (0.93) hybrid ดีกว่าที่ MRR (0.832 → 0.882) และ citation verified (0.95 → 1.00) แต่ n = 28 ต่างกัน 1&ndash;2 ข้อ จึงเป็นเพียงทิศทาง ไม่มีนัยสำคัญทางสถิติ</li>
+<li><b>ผลลบ: <code>min_score</code> ทำให้แย่ลง</b> ตัดข้อที่ตอบไม่ได้ได้ 4 จาก 6 ตอนทดสอบระดับคำถาม แต่เมื่อใช้เป็น floor ระดับ chunk ตัด chunk ที่ถูก (cosine 0.62) ทิ้ง เสียไป 1 ข้อ (0.93 → 0.89) และโมเดลปฏิเสธข้อที่ไม่ควรตอบครบ 6 ข้ออยู่แล้ว จึงตั้งค่าเริ่มต้นเป็น 0</li>
+</ul></div>
 
-<h3>4.2 การทดสอบ retrieval (n = 28, k = 5)</h3>
-<table><tr><th>chunk คำ/overlap</th><th>โหมด</th><th class="n">hit@1</th><th class="n">hit@3</th><th class="n">hit@5</th><th class="n">MRR</th></tr>
-<tr><td>80/20</td><td>bm25 / dense / hybrid</td><td class="n">0.75 / 0.75 / 0.79</td><td class="n">0.93 / 0.93 / 0.93</td><td class="n">0.93 / 0.96 / 0.93</td><td class="n">0.839 / 0.842 / 0.857</td></tr>
-<tr class="hl"><td>180/40 (ที่เลือก)</td><td>bm25 / dense / hybrid</td><td class="n">0.79 / 0.79 / 0.82</td><td class="n">0.86 / 0.93 / 0.93</td><td class="n">0.93 / 0.96 / 0.96</td><td class="n">0.832 / 0.852 / 0.882</td></tr>
-<tr><td>350/60</td><td>bm25 / dense / hybrid</td><td class="n">0.75 / 0.68 / 0.75</td><td class="n">0.96 / 0.86 / 0.96</td><td class="n">0.96 / 0.96 / 0.96</td><td class="n">0.845 / 0.787 / 0.857</td></tr></table>
-<div class="cap">ตารางที่ 2 ขนาด chunk และโหมด retrieval chunk 350 คำทำให้ dense retrieval แย่ลงมากที่สุด</div>
+<h3>4.2 ขนาด chunk และโหมด retrieval</h3>
+<figure>
+<svg viewBox="0 0 720 230" width="720" font-family="Noto Sans Thai, Thonburi, sans-serif" font-size="11">
+ <g stroke="#e2dcdd"><line x1="70" y1="20" x2="700" y2="20"/><line x1="70" y1="68" x2="700" y2="68"/><line x1="70" y1="116" x2="700" y2="116"/><line x1="70" y1="164" x2="700" y2="164"/></g>
+ <g fill="#6a6567" text-anchor="end" font-size="9.5"><text x="62" y="23">0.90</text><text x="62" y="71">0.85</text><text x="62" y="119">0.80</text><text x="62" y="167">0.75</text></g>
+ <text x="12" y="100" fill="#6a6567" font-size="9.5" transform="rotate(-90 12 100)" text-anchor="middle">MRR (ค่าสูง = ดี)</text>
+ <!-- scale: y = 164 - (v-0.75)/0.15*144 ; per-bar height from baseline 0.75 -->
+ <!-- 80/20: .839 .842 .857 -->
+ <rect x="100" y="79" width="34" height="85" fill="#2b6cb0"/><rect x="138" y="76" width="34" height="88" fill="#9a9496"/><rect x="176" y="61" width="34" height="103" fill="#1f7a4d"/>
+ <!-- 180/40: .832 .852 .882 -->
+ <rect x="300" y="85" width="34" height="79" fill="#2b6cb0"/><rect x="338" y="66" width="34" height="98" fill="#9a9496"/><rect x="376" y="37" width="34" height="127" fill="#1f7a4d"/>
+ <!-- 350/60: .845 .787 .857 -->
+ <rect x="500" y="73" width="34" height="91" fill="#2b6cb0"/><rect x="538" y="128" width="34" height="36" fill="#9a9496"/><rect x="576" y="61" width="34" height="103" fill="#1f7a4d"/>
+ <g font-size="9.5" text-anchor="middle" fill="#1d1b1c"><text x="117" y="73">.839</text><text x="155" y="70">.842</text><text x="193" y="55">.857</text><text x="317" y="79">.832</text><text x="355" y="60">.852</text><text x="393" y="31" font-weight="700">.882</text><text x="517" y="67">.845</text><text x="555" y="122">.787</text><text x="593" y="55">.857</text></g>
+ <g text-anchor="middle" font-size="11"><text x="155" y="186">chunk 80 คำ / overlap 20</text><text x="355" y="186" font-weight="700">chunk 180 / 40 (ที่เลือก)</text><text x="555" y="186">chunk 350 / 60</text></g>
+ <g font-size="10"><rect x="230" y="204" width="11" height="11" fill="#2b6cb0"/><text x="246" y="214">BM25</text><rect x="310" y="204" width="11" height="11" fill="#9a9496"/><text x="326" y="214">dense (bge-m3)</text><rect x="430" y="204" width="11" height="11" fill="#1f7a4d"/><text x="446" y="214">hybrid</text></g>
+</svg>
+<figcaption>รูปที่ 6 MRR ของ retrieval (n = 28, k = 5) แกนเริ่มที่ 0.75 เพื่อให้เห็นความต่าง chunk 350 คำทำให้ dense แย่ลงมากที่สุด (0.787)</figcaption>
+</figure>
+<p>hit@5 อยู่ที่ 0.93&ndash;0.96 ในเกือบทุกการตั้งค่า ความต่างอยู่ที่ <i>ลำดับ</i> ของ chunk ที่ถูกมากกว่าการหาไม่เจอ ผลเหล่านี้ใช้เลือก chunk 180/40 แต่การเลือกก็ทำบนชุดคำถามเดียวกันกับที่รายงาน (ดูข้อ 6)</p>
 
-<h3>4.3 การทดลองเรื่อง chunking</h3>
-<p>baseline E0 ตัดหน้าต่างคงที่ 180 คำ: 74% ของ chunk จบกลางประโยค และประมาณ 15% ของข้อความเป็นหมายเหตุที่ซ้ำทุกหน้า มีสี่เทคนิคที่มาจากการสืบค้นเอกสารด้วย NotebookLM (แหล่งจากเว็บ ตัวเลขไม่ได้ตรวจสอบอิสระ) และวัดแต่ละเทคนิคบน gold set ชุดเดียวกัน ไม่ได้ทดลอง late chunking เพราะต้องใช้ embedding model ที่ proxy ไม่มี และไม่ได้ทดลอง semantic chunking เพราะมีรายงานว่าทำให้ข้อความสั้นแตกเป็นชิ้นเล็กเกินไป</p>
-<table><tr><th></th><th>pipeline</th><th class="n">chunks</th><th class="n">hybrid MRR</th><th class="n">dense MRR</th><th class="n">acc. คำตอบ</th><th class="n">citation verified</th></tr>
+<h3>4.3 ทดลองเรื่อง chunking: ไม่มีวิธีไหนชนะ baseline ชัดเจน</h3>
+<p>baseline <b>E0</b> ตัดหน้าต่างคงที่ 180 คำ ปัญหาที่วัดได้: 74% ของ chunk จบกลางประโยค และประมาณ 15% ของข้อความเป็นหมายเหตุที่ซ้ำทุกหน้า เราลองสี่เทคนิค (ที่ได้จากการสืบค้นด้วย NotebookLM จากแหล่งเว็บ ตัวเลขในแหล่งเหล่านั้นไม่ได้ตรวจสอบอิสระ) แล้ววัดบน gold set เดิม</p>
+<figure>
+<svg viewBox="0 0 720 235" width="720" font-family="Noto Sans Thai, Thonburi, sans-serif" font-size="11">
+ <g stroke="#e2dcdd"><line x1="70" y1="20" x2="700" y2="20"/><line x1="70" y1="70" x2="700" y2="70"/><line x1="70" y1="120" x2="700" y2="120"/><line x1="70" y1="170" x2="700" y2="170"/></g>
+ <g fill="#6a6567" text-anchor="end" font-size="9.5"><text x="62" y="23">1.00</text><text x="62" y="73">0.95</text><text x="62" y="123">0.90</text><text x="62" y="173">0.85</text></g>
+ <!-- y = 170 - (v-0.85)/0.15*150 ; accuracy dots (blue), citation verified dots (green) ; x centers 150,270,390,510,630 -->
+ <g stroke="#bbb" stroke-width="2">
+  <line x1="150" y1="20" x2="150" y2="90"/><line x1="270" y1="50" x2="270" y2="130"/><line x1="390" y1="60" x2="390" y2="100"/><line x1="510" y1="60" x2="510" y2="140"/><line x1="630" y1="70" x2="630" y2="90"/>
+ </g>
+ <!-- E0 acc .93 -> 80 ; cit 1.00 -> 20 -->
+ <circle cx="150" cy="90" r="7" fill="#2b6cb0"/><circle cx="150" cy="20" r="7" fill="#1f7a4d"/>
+ <!-- E1 acc .89 -> 110 ; cit .97 -> 50 -->
+ <circle cx="270" cy="130" r="7" fill="#2b6cb0"/><circle cx="270" cy="50" r="7" fill="#1f7a4d"/>
+ <!-- E2 acc .96 -> 50 ; cit .92 -> 100 -->
+ <circle cx="390" cy="60" r="7" fill="#2b6cb0"/><circle cx="390" cy="100" r="7" fill="#1f7a4d"/>
+ <!-- E3 acc .96 -> 50 ; cit .88 -> 140 -->
+ <circle cx="510" cy="60" r="7" fill="#2b6cb0"/><circle cx="510" cy="140" r="7" fill="#1f7a4d"/>
+ <!-- E4 acc .93 -> 80 ; cit .95 -> 70 -->
+ <circle cx="630" cy="90" r="7" fill="#2b6cb0"/><circle cx="630" cy="70" r="7" fill="#1f7a4d"/>
+ <g font-size="9.5" fill="#1d1b1c"><text x="162" y="94">.93</text><text x="162" y="24">1.00</text><text x="282" y="134">.89</text><text x="282" y="54">.97</text><text x="402" y="64">.96</text><text x="402" y="104">.92</text><text x="522" y="64">.96</text><text x="522" y="144">.88</text><text x="642" y="94">.93</text><text x="642" y="74">.95</text></g>
+ <g text-anchor="middle" font-size="11"><text x="150" y="192" font-weight="700">E0 baseline</text><text x="270" y="192">E1</text><text x="390" y="192">E2</text><text x="510" y="192">E3</text><text x="630" y="192">E4</text></g>
+ <g text-anchor="middle" font-size="9" fill="#6a6567"><text x="150" y="205">หน้าต่าง 180 คำ</text><text x="270" y="205">ลบหมายเหตุซ้ำ+ประโยค</text><text x="390" y="205">ตาราง markdown</text><text x="510" y="205">E2 + บริบทจาก LLM</text><text x="630" y="205">parent-child</text></g>
+ <g font-size="10"><circle cx="270" cy="226" r="5" fill="#2b6cb0"/><text x="280" y="230">accuracy ของคำตอบ</text><circle cx="420" cy="226" r="5" fill="#1f7a4d"/><text x="430" y="230">citation verified</text></g>
+</svg>
+<figcaption>รูปที่ 7 accuracy และ citation verified ของแต่ละวิธี (hybrid retrieval, n = 28) แกนเริ่มที่ 0.85 แต่ละขั้นของ accuracy คือ 1 ข้อ (0.036)</figcaption>
+</figure>
+<table><tr><th></th><th>วิธี</th><th class="n">chunks</th><th class="n">hybrid MRR</th><th class="n">dense MRR</th><th class="n">accuracy</th><th class="n">citation verified</th></tr>
 <tr class="hl"><td>E0</td><td>baseline: หน้าต่าง 180 คำ</td><td class="n">290</td><td class="n">0.882</td><td class="n">0.852</td><td class="n">0.93</td><td class="n">1.00</td></tr>
-<tr><td>E1</td><td>+ ลบ boilerplate ที่ซ้ำ, จัด chunk ตามประโยค</td><td class="n">249</td><td class="n">0.893</td><td class="n">0.878</td><td class="n">0.89</td><td class="n">0.97</td></tr>
-<tr><td>E2</td><td>ตาราง markdown จาก PyMuPDF4LLM, ใส่ header row ซ้ำในทุก chunk</td><td class="n">262</td><td class="n">0.875</td><td class="n">0.788</td><td class="n">0.96</td><td class="n">0.92</td></tr>
+<tr><td>E1</td><td>+ ลบหมายเหตุซ้ำ, ตัดตามประโยค</td><td class="n">249</td><td class="n">0.893</td><td class="n">0.878</td><td class="n">0.89</td><td class="n">0.97</td></tr>
+<tr><td>E2</td><td>ตาราง markdown (PyMuPDF4LLM) + header ซ้ำทุก chunk</td><td class="n">262</td><td class="n">0.875</td><td class="n">0.788</td><td class="n">0.96</td><td class="n">0.92</td></tr>
 <tr><td>E3</td><td>E2 + ประโยคบริบทที่ LLM เขียนให้ทุก chunk</td><td class="n">262</td><td class="n">0.873</td><td class="n">0.848</td><td class="n">0.96</td><td class="n">0.88</td></tr>
 <tr><td>E4</td><td>parent-child: child ~60 คำ ส่งทั้งหน้ากลับ</td><td class="n">650</td><td class="n">0.889</td><td class="n">0.923</td><td class="n">0.93</td><td class="n">0.95</td></tr></table>
-<div class="cap">ตารางที่ 3 accuracy ของคำตอบและ citation verified เป็นค่าของ hybrid retrieval</div>
-<p><strong>ไม่มี variant ใดชนะ baseline อย่างชัดเจน</strong> accuracy เปลี่ยนไป &plusmn;1 ข้อ (25&ndash;27 จาก 28) และ MRR เปลี่ยน 0.01&ndash;0.04 ทั้งหมดอยู่ในระดับ noise ของ n = 28 E1 ลดสัดส่วน chunk ที่จบกลางประโยคจาก 74% เหลือ 13% แต่ accuracy ไม่เพิ่ม E2 และ E3 แก้คำถามได้หนึ่งข้อ (A24) แต่ทำให้สัดส่วน citation ที่ตรวจสอบได้ลดจาก 1.00 เหลือ 0.88&ndash;0.92 โดยยังไม่ได้ตรวจสอบสาเหตุ E4 แบบ dense อย่างเดียวเป็น retriever ที่ดีที่สุด (hit@3 = hit@5 = 1.00, MRR 0.923) แต่ไม่ได้ประเมินคำตอบ เพื่อไม่ให้ปรับจูนบนคำถามชุดเดิมเพิ่ม จึงเป็นสมมติฐานสำหรับคำถามชุดใหม่ ไม่ใช่ผลลัพธ์ E0 ยังเป็นค่าเริ่มต้น ส่วน variant อื่นเปิดใช้เองได้</p>
+<div class="key"><b>ข้อสรุป:</b> accuracy ขยับแค่ &plusmn;1 ข้อ (25&ndash;27 จาก 28) และ MRR ขยับ 0.01&ndash;0.04 ทั้งหมดอยู่ในระดับ noise ของ n = 28 สิ่งที่เห็นได้ชัดคือ E1 ลด chunk ที่จบกลางประโยคจาก 74% เหลือ 13% แต่ accuracy ไม่เพิ่ม และ E2/E3 แก้ A24 ได้หนึ่งข้อ แต่ citation verified ลดลงเหลือ 0.88&ndash;0.92 (ยังไม่ได้ตรวจสาเหตุ) E4 แบบ dense อย่างเดียวได้ MRR สูงสุด (0.923) <u>แต่ไม่ได้ประเมินคำตอบ</u> เพื่อไม่ให้ปรับจูนบนชุดเดิมซ้ำ จึงเป็นสมมติฐานสำหรับคำถามชุดใหม่ ไม่ใช่ผล ระบบจึงยังใช้ E0</div>
+<p style="font-size:9.5pt;color:var(--muted)">ไม่ได้ลอง late chunking เพราะต้องใช้ embedding model ที่ proxy ไม่มี และไม่ได้ลอง semantic chunking เพราะมีรายงานว่าทำให้ข้อความสั้นแตกเป็นชิ้นเล็กเกินไป</p>
 
-<h2>5. กรณีที่ล้มเหลว</h2>
-<table><tr><th style="width:7%">id</th><th style="width:25%">คำถาม</th><th style="width:20%">เกิดอะไรขึ้น</th><th>สาเหตุ</th></tr>
-<tr><td>A07</td><td>AIA CI Care คุ้มครองโรคร้ายแรงระยะรุนแรงกี่โรค?</td><td>ตอบ 44 แต่ป้ายกำกับ (gold) คือ 40</td><td>โบรชัวร์ขัดแย้งกันเอง: หน้า 1 เขียน "Cover 44 severe stage critical illnesses" ส่วนหัวตารางหน้า 2 เขียน "Severe Stage (40 Diseases / Treatment)" ป้ายกำกับ gold ยึดตาราง โมเดลยึดหน้า 1 ซึ่งเป็นการอ่านที่มีหลักฐานรองรับ นี่คือความขัดแย้งของแหล่งข้อมูล ไม่ใช่ hallucination พฤติกรรมที่ควรเป็นคือแจ้งความขัดแย้ง แต่ระบบยังทำไม่ได้</td></tr>
-<tr><td>A24</td><td>Infinite Wealth Prestige เลือกระยะเวลาชำระเบี้ยได้กี่แบบ?</td><td>ตอบด้วย <em>ความถี่</em> ในการชำระเบี้ย top-up (รายเดือน รายไตรมาส)</td><td>chunk ที่ถูกต้อง (หน้า 3) อยู่อันดับ 5 โมเดลตอบจาก passage อันดับสูงกว่าที่ใช้คำว่า "payment period" คนละความหมาย</td></tr>
-<tr><td>A17 (เฉพาะเมื่อมี floor)</td><td>ลดหย่อนภาษีสูงสุดของ Smart Select เท่าไร?</td><td>false abstain</td><td>floor <code>min_score</code> = 0.65 ตัด chunk ที่เป็นหลักฐานทิ้ง</td></tr></table>
-<div class="box"><strong>การแก้ไขที่บันทึกไว้</strong> ตอนแรกผมวินิจฉัย A07 ว่าโมเดลแต่งเลข "44" เพราะตารางที่ถูก flatten เสียโครงสร้าง เมื่ออ่านหน้า 1 อีกครั้งพบว่าตัวเลขนั้นอยู่ในโบรชัวร์จริง การวินิจฉัยนั้น และ README ที่พูดซ้ำ ผิด และได้แก้ไขแล้ว บทเรียนต่อการประเมิน: ป้ายกำกับอาจเป็นฝ่ายที่ถูกโต้แย้งได้ ทุกกรณีล้มเหลวจึงต้องเปิดดูแหล่งข้อมูลก่อนโทษโมเดล</div>
+<h2><span class="no">5</span>กรณีที่ล้มเหลว</h2>
+<h3 style="margin-top:2pt">กรณีหลัก A07: ตอบ 44 แต่ป้ายกำกับคือ 40</h3>
+<div class="two">
+<figure><img class="shot" src="fig/ui_fail.png" alt="A07"><figcaption>รูปที่ 8ก ระบบตอบ 44 โรค quote ตรวจแล้วว่ามีจริงในหน้า 1</figcaption></figure>
+<figure>
+<svg viewBox="0 0 330 250" width="100%" font-family="Noto Sans Thai, Thonburi, sans-serif" font-size="11">
+ <text x="165" y="16" text-anchor="middle" font-weight="700">โบรชัวร์ AIA CI Care ขัดแย้งกันเอง</text>
+ <rect x="4" y="28" width="322" height="78" rx="8" fill="#fff" stroke="#d31145" stroke-width="1.4"/>
+ <text x="14" y="48" font-weight="700" fill="#d31145">หน้า 1 (ข้อความโปรโมต)</text>
+ <text x="14" y="68" font-style="italic">"Cover <tspan font-weight="700" fill="#d31145" font-size="13">44</tspan> severe stage</text><text x="14" y="84" font-style="italic">critical illnesses*"</text>
+ <text x="190" y="84" font-size="9.5" fill="#d31145">← โมเดลยึดอันนี้</text>
+ <rect x="4" y="116" width="322" height="78" rx="8" fill="#fff" stroke="#2b6cb0" stroke-width="1.4"/>
+ <text x="14" y="136" font-weight="700" fill="#2b6cb0">หน้า 2 (หัวตารางผลประโยชน์)</text>
+ <text x="14" y="156" font-style="italic">"Severe Stage (<tspan font-weight="700" fill="#2b6cb0" font-size="13">40</tspan> Diseases</text><text x="14" y="172" font-style="italic">/ Treatment)"</text>
+ <text x="190" y="172" font-size="9.5" fill="#2b6cb0">← gold label ยึดอันนี้</text>
+ <text x="165" y="220" text-anchor="middle" font-size="10" fill="#6a6567">ทั้งสองเป็นข้อความจริงในเอกสาร</text><text x="165" y="236" text-anchor="middle" font-size="10" fill="#6a6567">พฤติกรรมที่ควรเป็น: แจ้งผู้ใช้ว่าตัวเลขขัดกัน</text>
+</svg>
+<figcaption>รูปที่ 8ข ที่มาของความขัดแย้ง</figcaption></figure>
+</div>
+<p><b>วินิจฉัย:</b> นี่คือ <u>ความขัดแย้งของแหล่งข้อมูล</u> ไม่ใช่ hallucination โมเดลอ่านหน้า 1 ซึ่งเป็นการอ่านที่มีหลักฐานรองรับ ส่วน gold label ยึดตาราง ระบบยังไม่สามารถตรวจจับและแจ้งความขัดแย้งแบบนี้ได้ จึงนับเป็นความล้มเหลวของระบบ ไม่ใช่ความผิดของโมเดลฝ่ายเดียว</p>
+<div class="key warn"><b>การแก้ไขที่บันทึกไว้</b> ตอนแรกผมวินิจฉัย A07 ว่าโมเดลแต่งเลข 44 เพราะตารางที่ถูก flatten เสียโครงสร้าง เมื่ออ่านหน้า 1 ซ้ำจึงพบว่าเลขนั้นอยู่ในโบรชัวร์จริง การวินิจฉัยนั้น และ README ที่พูดซ้ำ ผิด จึงแก้แล้ว บทเรียน: <b>ป้ายกำกับเองก็อาจถูกโต้แย้งได้</b> ทุกกรณีที่ล้มเหลวต้องเปิดดูแหล่งข้อมูลก่อนโทษโมเดล</div>
 
-<h2>6. ข้อจำกัดและงานต่อไป</h2>
+<h3>กรณีอื่นที่ผิด</h3>
+<table><tr><th style="width:11%">id</th><th style="width:30%">คำถาม</th><th style="width:22%">เกิดอะไรขึ้น</th><th>สาเหตุ</th></tr>
+<tr><td>A24</td><td>Infinite Wealth Prestige เลือกระยะเวลาชำระเบี้ยได้กี่แบบ?</td><td>ตอบด้วย <i>ความถี่</i> ในการชำระ top-up (รายเดือน, รายไตรมาส)</td><td>chunk ที่ถูก (หน้า 3) อยู่อันดับ 5 โมเดลตอบจาก passage อันดับสูงกว่าที่ใช้คำว่า "payment period" คนละความหมาย</td></tr>
+<tr><td>A17 <span class="tag">เฉพาะเมื่อมี floor</span></td><td>ลดหย่อนภาษีสูงสุดของ Smart Select เท่าไร?</td><td>false abstain</td><td><code>min_score</code> = 0.65 ตัด chunk หลักฐานทิ้ง</td></tr></table>
+
+<h2><span class="no">6</span>ข้อจำกัดและงานต่อไป</h2>
+<div class="two">
+<div>
+<h3 style="margin-top:2pt">ข้อจำกัด</h3>
 <ul>
-<li><strong>eval เล็ก สร้างเอง และปรับจูนบนชุดเดียวกัน</strong> ขนาด chunk, โหมด retrieval และ <code>min_score</code> เลือกโดยดูคำถามชุดเดียวกัน 34 ข้อ ไม่มี held-out set ตัวเลขที่รายงานจึงมีแนวโน้มสูงกว่าความจริง และความต่างหนึ่งข้อคือ noise</li>
-<li><strong>การให้คะแนนด้วย keyword เป็นเพียง proxy</strong> อาจให้คะแนนคำตอบที่มีตัวเลขถูกแต่ผิดบริบท และอาจพลาดคำตอบที่ถูกแต่ถอดความ มี gold keyword หนึ่งตัวที่เป็นเพียงรากคำ ทำให้คำตอบที่ถูกถูกตัดสินว่าผิด จึงเปลี่ยนเป็นคำเต็ม ไม่ได้ใช้ LLM เป็นผู้ตัดสิน</li>
-<li><strong>ระบบไม่แจ้งเมื่อแหล่งข้อมูลขัดแย้งกัน</strong> (A07) และตารางใน PDF ถูก flatten เมื่อใช้ parser ค่าเริ่มต้น parser ตาราง (E2) ไม่ช่วยให้ดีขึ้นอย่างวัดได้ในชุดนี้ ผลของการ flatten จึงยังไม่ได้ทดสอบ ไม่ใช่ถูกหักล้าง</li>
-<li><strong>เฉพาะโบรชัวร์ภาษาอังกฤษ</strong> มีไฟล์สามไฟล์ที่ติดป้าย English แต่จริงๆ เป็นภาษาไทยและดึงข้อความออกมาเป็นขยะ จึงถูกกรองออก ผลิตภัณฑ์บางตัว (ประกันชั่วระยะเวลา, endowment, pay-life) จึงมีข้อมูลน้อยหรือไม่มี</li>
-<li><strong>ยังไม่ได้ประเมิน agent เชิงปริมาณ</strong> ทดสอบด้วยมือ (เทียบหลายผลิตภัณฑ์, ทดสอบการปฏิเสธ argument) ในการรันด้วยมือครั้งหนึ่ง agent คูณเลขเองแทนที่จะเรียก <code>calculate</code></li>
-<li><strong>โมเดลตระกูลเดียวทำทุกอย่าง</strong> ไม่มีผู้ตัดสินอิสระ และพึ่ง proxy ของคลาส repo สร้างขึ้นในช่วงทำงานครั้งเดียว ประวัติ commit จึงเป็นลำดับ commit สั้นๆ ที่แบ่งตามงาน</li>
+<li><b>eval เล็ก สร้างเอง ปรับจูนบนชุดเดียวกัน</b> เลือก chunk, retrieval mode และ <code>min_score</code> จากคำถาม 34 ข้อชุดเดียวกัน ไม่มี held-out set ตัวเลขจึงมีแนวโน้มสูงกว่าความจริง และความต่าง 1 ข้อคือ noise</li>
+<li><b>keyword เป็นเพียง proxy</b> อาจให้คะแนนคำตอบที่เลขถูกแต่บริบทผิด หรือพลาดคำตอบที่ถูกแต่ถอดความ ไม่ได้ใช้ LLM เป็นผู้ตัดสิน</li>
+<li><b>ไม่แจ้งเมื่อแหล่งขัดกัน</b> (A07) และตารางใน PDF ถูก flatten โดย parser เริ่มต้น</li>
+<li><b>คลังเป็นภาษาอังกฤษ</b> ไฟล์ที่ติดป้าย English แต่จริงๆ เป็นภาษาไทยดึงข้อความเป็นขยะ จึงถูกกรองออก ผลิตภัณฑ์บางตัวจึงมีข้อมูลน้อยหรือไม่มี</li>
+<li><b>agent ยังไม่ได้ประเมินเชิงปริมาณ</b> ทดสอบด้วยมือเท่านั้น และเคยเจอกรณีที่ agent คูณเลขเองแทนเรียก <code>calculate</code></li>
+<li><b>โมเดลตระกูลเดียวทำทุกอย่าง</b> ไม่มีผู้ตัดสินอิสระ และพึ่ง proxy ของคลาส</li>
 </ul>
-<p><strong>งานต่อไป:</strong> ตรวจจับและรายงานตัวเลขที่ขัดแย้งกันระหว่าง passage ที่ดึงมา; ทดสอบ parent-child แบบ dense อย่างเดียวบนคำถามชุดใหม่; หาสาเหตุที่ variant แบบตารางทำให้ citation verification ลดลง; เขียน gold set ที่ใหญ่ขึ้นและแยกเป็น held-out ที่ระบบไม่เคยถูกปรับจูนกับมัน; สร้าง gold set ให้ agent; รองรับภาษาไทย</p>
+</div>
+<div>
+<h3 style="margin-top:2pt">ภาษาไทย: ใช้ได้ แต่ยังไม่ได้วัด</h3>
+<p>UI และ agent ตอบเป็นภาษาของคำถาม ข้อความระบบ (เช่น "โบรชัวร์ไม่ได้ระบุเรื่องนี้") สลับตามภาษา และ bge-m3 รองรับหลายภาษา แต่</p>
+<ul>
+<li>ทดสอบด้วยมือแค่ <b>4 คำถาม</b>: ตอบถูก 1 (รอคอย 60 วัน), ปฏิเสธถูก 1 (Vitality), agent ตอบเป็นภาษาไทย 1 (ยังไม่ได้ตรวจความถูกต้องเทียบ gold), และ A07 ได้ 44 เหมือนฉบับอังกฤษ</li>
+<li><b>ไม่มีตัวเลข accuracy ภาษาไทย</b> เพราะ gold set เป็นอังกฤษ และ BM25 tokenizer ตัดอักษรไทยทิ้ง คำถามไทยจึงพึ่ง dense retrieval เป็นหลัก</li>
+<li>คำตอบภาษาไทยยังอ้าง quote ภาษาอังกฤษ เพราะเอกสารต้นฉบับเป็นอังกฤษ</li>
+</ul>
+</div></div>
+<h3>งานต่อไป (เรียงตามความสำคัญ)</h3>
+<ol style="margin:3pt 0 3pt 16pt;padding:0">
+<li>เขียน gold set ใหม่ที่ใหญ่ขึ้น และกันส่วน <b>held-out</b> ที่ไม่เคยใช้ปรับจูน เพื่อให้ตัวเลขเชื่อถือได้</li>
+<li>ตรวจจับและแจ้งตัวเลขที่ขัดกันระหว่าง passage ที่ดึงมา (แก้ A07)</li>
+<li>ทดสอบ parent-child แบบ dense อย่างเดียว (E4) บนคำถามชุดใหม่ และหาสาเหตุที่วิธีตารางทำให้ citation verified ลดลง</li>
+<li>สร้าง gold set ภาษาไทยและ gold set ของ agent</li>
+</ol>
+
+<p style="margin-top:12pt;font-size:9pt;color:var(--muted)">ทุกตัวเลขในรายงานมาจากการรันใน repo (<code>eval/run_eval.py</code>, <code>eval/results/</code>) ด้วย temperature 0 และ cache บนดิสก์ รันซ้ำแล้วได้ผลเดิม รูป 5&ndash;7 วาดจากตัวเลขในตาราง 1&ndash;3 รูป 4 และ 8ก เป็น screenshot ของแอปจริง</p>
 </body></html>

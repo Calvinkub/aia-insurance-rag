@@ -176,7 +176,7 @@ export const Outro: React.FC = () => (
     </div>
     <div style={{ marginTop: 80 }}>
       <Reveal delay={70}>
-        <div style={{ fontSize: 56, fontWeight: 700, color: C.teal }}>github.com/Calvinkub/aia-brochure-rag</div>
+        <div style={{ fontSize: 56, fontWeight: 700, color: C.teal }}>github.com/Calvinkub/aia-insurance-rag</div>
       </Reveal>
     </div>
   </Scene>
