@@ -5,11 +5,12 @@ import timeline from "./demo_timeline.json";
 import { Voice } from "./Voice";
 import { C, fontFamily } from "./theme";
 
-const CAPTIONS: { key: "demo1" | "demo2" | "demo3" | "demo4"; text: string; color: string }[] = [
-  { key: "demo1", text: "1 · คำถามที่มีคำตอบ → citation ขึ้นสถานะตรวจแล้ว", color: C.teal },
-  { key: "demo2", text: "2 · คำถามที่ไม่มีในเอกสาร → ปฏิเสธ ไม่เดา", color: C.amber },
-  { key: "demo3", text: "3 · Agent เรียก tool ทีละขั้น", color: C.blue },
-  { key: "demo4", text: "4 · กรณีล้มเหลว: ตอบ 44 แต่ตารางหน้า 2 บอก 40", color: C.red },
+const CAPTIONS: { key: "demo1" | "demo2" | "demo3" | "demo4" | "demo5"; text: string; color: string }[] = [
+  { key: "demo1", text: "1 · คำถามไทย → ตอบพร้อม citation ที่ตรวจแล้ว", color: C.teal },
+  { key: "demo2", text: "2 · ถามกว้างไป → agent ถามกลับ ไม่เดา", color: C.amber },
+  { key: "demo3", text: "3 · agent เรียก list_products ตอบรายชื่อผลิตภัณฑ์", color: C.blue },
+  { key: "demo4", text: "4 · โหมด RAG: โบรชัวร์ไม่ได้ระบุ → ปฏิเสธ", color: C.amber },
+  { key: "demo5", text: "5 · ถามอังกฤษ → RAG และ agent ได้คำตอบเดียวกัน", color: C.teal },
 ];
 
 const Caption: React.FC<{ text: string; color: string; from: number; to: number }> = ({ text, color, from, to }) => {
@@ -33,7 +34,7 @@ export const DemoScene: React.FC = () => {
   const { fps } = useVideoConfig();
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg }}>
-      {/* 16:9 recording scaled to leave a caption band below it, so captions never cover the page */}
+      {/* real screen recording (browser UI cropped out), scaled to leave a caption band below it, so captions never cover the page */}
       <Video src={staticFile("demo.mp4")} muted style={{ position: "absolute", top: 0, left: 120, width: 1680, height: 945, objectFit: "cover" }} />
       {CAPTIONS.map((c) => (
         <Voice key={`v-${c.key}`} clip={c.key} from={Math.round(timeline[c.key].start * fps) + 6} />

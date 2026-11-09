@@ -6,8 +6,11 @@
   "chunking": 13.8,
   "failure": 18.9,
   "outro": 11.95,
-  "demo1": 9.5,
-  "demo2": 4.2,
-  "demo3": 6.5,
-  "demo4": 5.45
+  "demo1": 13.3,
+  "demo2": 6.0,
+  "demo3": 5.55,
+  "demo4": 9.55,
+  "demo5": 8.9,
+  "failure0": 11.3,
+  "table": 27.5
 }
